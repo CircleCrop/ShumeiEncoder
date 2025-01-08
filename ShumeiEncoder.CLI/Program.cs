@@ -11,9 +11,11 @@ public class Program {
         */
         string filePath = Menu.InputFile();
         string presetPath = Menu.ChoosePreset();
+        var yaml = File.ReadAllText(presetPath);
         Boolean ifChecked = Menu.CheckStart();
         if (ifChecked) {
         }
+        Menu.Exit();
     }
 
     public class Preset {
@@ -78,7 +80,7 @@ public class Program {
             return result.Path;
         }
         public static Boolean CheckStart() {
-            Console.WriteLine("Start Processing(y/n)?:");
+            Console.Write("Start Processing? (y/n) ");
             string? input = Console.ReadLine();
             return input switch {
                 "y" => true,
