@@ -15,9 +15,11 @@ public class Program {
         string presetPath = Menu.ChoosePreset();
         var deserializer = new DeserializerBuilder().Build();
         var yaml = File.ReadAllText(presetPath);
-
+        Preset preset = deserializer.Deserialize<Preset>(yaml);
+        Console.WriteLine(preset.Description);
         Boolean ifChecked = Menu.CheckStart();
         if (ifChecked) {
+
         }
         Menu.Exit();
     }
