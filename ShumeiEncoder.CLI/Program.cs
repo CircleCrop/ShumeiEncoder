@@ -1,4 +1,6 @@
 ﻿using NativeFileDialogSharp;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
 
 public class Program {
     internal static void Main(string[] args) {
@@ -11,7 +13,9 @@ public class Program {
         */
         string filePath = Menu.InputFile();
         string presetPath = Menu.ChoosePreset();
+        var deserializer = new DeserializerBuilder().Build();
         var yaml = File.ReadAllText(presetPath);
+
         Boolean ifChecked = Menu.CheckStart();
         if (ifChecked) {
         }
