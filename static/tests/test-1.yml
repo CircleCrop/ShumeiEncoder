@@ -1,0 +1,20 @@
+name: Test Preset 1
+description: A test preset using h264 and aac formats.
+version: 1.0
+video:
+    fmt: h264 #h264, avc, h265, hevc
+    args:
+        crf: 23
+        ref: 7
+audio:
+    fmt: aac #aac, flac, wav
+    args:
+        quality: 127
+        mode: tvbr
+container:
+    fmt: mp4
+    args: 
+metadata:
+    performer: Digital Media Association of SHS
+custom:
+    key1: test
