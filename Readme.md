@@ -8,20 +8,18 @@
 
 ## Support Formats
 ### Video
-Decode:
 
+	**Decode**
 	Apple Prores Series, Avid DNx Series, H.264/AVC, H.265/HEVC
 	4:2:0/4:2:2/4:4:4 8/10bits
-
-Encode:
-
+	**Encode**
 	H.264/AVC, H.265/HEVC
 	4:2:0 8/10bits
 
 ### Audio
 
-	Decode£ºAAC, FLAC, WAV
-	Encode£ºAAC, FLAC
+	**Decode**: AAC, FLAC, WAV
+	**Encode**: AAC, FLAC
 
 ### Container
 
