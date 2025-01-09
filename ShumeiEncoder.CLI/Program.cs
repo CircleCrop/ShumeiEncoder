@@ -1,9 +1,20 @@
 ﻿//using YamlDotNet.Serialization.NamingConventions;
+using System.Diagnostics;
 using System.Text;
 using YamlDotNet.Serialization;
 
 public class Program {
     internal static void Main(string[] args) {
+        string ffmpegPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/ffmpeg.exe";
+        string x264Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x264.exe";
+        string x265Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265.exe";
+        string x26510BPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265-10b.exe";
+        string qaac64Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/qaac64.exe";
+        string flacPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/flac.exe";
+        string opusPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/opusenc.exe";
+        string webpPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/cwebp.exe";
+
+
         Console.WriteLine("Welcome to ShumeiEncoder");
         Console.WriteLine();
 
@@ -35,22 +46,27 @@ public class Program {
             //Console.WriteLine(preset.Video.Fmt);
         }
         //ffmpeg -i input.avs -f yuv4mpegpipe -an -v 0 - | x264 [options] --demuxer y4m -o output.264 -
-        StringBuilder VideoEncodeCommand = new($"ffmpeg -i {filePath} -f yuv4mpegpipe -an -v 0 - | x264 --demuxer y4m");
+        StringBuilder VideoEncodeArgs = new();
+        string cachePath = outputPath[..outputPath.LastIndexOf('\\')];
         // 构造编码参数
         if (preset.Video?.Fmt != null && preset.Video?.Args != null) {
+            VideoEncodeArgs.Append($"--demuxer y4m");
             if (preset.Video.Fmt == "h264" || preset.Video.Fmt == "avc") {
-                ArgsToCLIString(preset, VideoEncodeCommand);
+                ArgsToCLIString(preset, VideoEncodeArgs);
             }
+
+            VideoEncodeArgs.Append($" -o {cachePath}\\output_cache.264\" -");
+            Console.WriteLine(VideoEncodeArgs.ToString());
+            Console.WriteLine();
         }
-        string cachePath = outputPath[..outputPath.LastIndexOf('\\')];
-        VideoEncodeCommand.Append($" -o {cachePath}\\output_cache.264\" -");
-        Console.WriteLine(VideoEncodeCommand.ToString());
-        Console.WriteLine();
 
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
             // 读取音频位深，避免 16 位量化误差【To Do】
-            StringBuilder AudioEncodeCommand = 
+            StringBuilder AudioEncodeCommand =
                 new($"ffmpeg -i {filePath} -f wav - | qaac64 --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o {cachePath}\\output_cache.m4a\" -");
+            // 支持其他 AAC 参数【To Do】
+            Console.WriteLine(VideoEncodeArgs.ToString());
+            Console.WriteLine();
         }
 
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "flac") {
@@ -62,7 +78,32 @@ public class Program {
         }
 
         if (CLIConsole.CheckStart()) {
+            Process ffmpegProcess = new Process {
+                StartInfo = new ProcessStartInfo {
+                    FileName = ffmpegPath,
+                    Arguments = $"-i {filePath} -f yuv4mpegpipe -an -v 0 - ",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            StreamReader ffmpegOutput = ffmpegProcess.StandardOutput;
+            StreamReader ffmpegError = ffmpegProcess.StandardError;
 
+            Process EncodecProcess = new Process {
+                StartInfo = new ProcessStartInfo {
+                    FileName = x264Path,
+                    Arguments = VideoEncodeArgs.ToString(),
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            StreamReader EncodecOutput = EncodecProcess.StandardOutput;
+            StreamReader EncodecError = EncodecProcess.StandardError;
         }
         CLIConsole.Exit();
     }

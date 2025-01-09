@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ShumeiEncoder.CLI": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "RUNNING_PATH_PREFIX": "D:\\Coding\\CSharp\\ShumeiEncoder\\static"
+      }
+    }
+  }
+}
