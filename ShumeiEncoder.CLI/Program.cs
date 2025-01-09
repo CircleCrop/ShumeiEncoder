@@ -155,8 +155,7 @@ public class Program {
             public int? AudioOffset { get; set; } // ms}
         }
     }
-    internal static string? lastSelectMediaFilePath;
-    internal static string? lastSelectPresetFilePath;
+
     internal class CLIConsole() {
         /*
          * 主菜单 - ：输入文件
