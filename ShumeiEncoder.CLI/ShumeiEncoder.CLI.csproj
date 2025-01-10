@@ -7,12 +7,6 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Remove="C:\Users\Crop\.nuget\packages\nativefiledialogsharp\0.6.0-alpha\contentFiles\any\netstandard2.0\nfd.dll" />
-    <Content Remove="C:\Users\Crop\.nuget\packages\nativefiledialogsharp\0.6.0-alpha\contentFiles\any\netstandard2.0\nfd_x86.dll" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
