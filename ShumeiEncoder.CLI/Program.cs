@@ -1,16 +1,6 @@
 ﻿//using YamlDotNet.Serialization.NamingConventions;
 using System.Text;
 using YamlDotNet.Serialization;
-public class CodecPath {
-    public static string FFmpegPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/ffmpeg.exe";
-    public static string x264Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x264.exe";
-    public static string x265Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265.exe";
-    public static string x26510bPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265-10b.exe";
-    public static string Qaac64Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/qaac64.exe";
-    public static string FlacPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/flac.exe";
-    public static string OpusPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/opusenc.exe";
-    public static string WebpPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/cwebp.exe";
-}
 
 public class Program {
     internal static void Main(string[] args) {

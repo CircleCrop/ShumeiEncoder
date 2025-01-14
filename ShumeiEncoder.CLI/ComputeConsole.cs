@@ -7,11 +7,7 @@ public abstract class ComputeTask {
     // DemuxTask
 }
 
-public class ContainTask {
-
-}
-
-internal class ComputeConsole {
+internal class ComputeApi {
 
 
     void PrepareTask(string VideoCodec) {
