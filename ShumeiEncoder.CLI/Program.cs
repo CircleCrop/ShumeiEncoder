@@ -1,18 +1,19 @@
 ﻿//using YamlDotNet.Serialization.NamingConventions;
-using System.Diagnostics;
 using System.Text;
 using YamlDotNet.Serialization;
+public class CodecPath {
+    public static string FFmpegPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/ffmpeg.exe";
+    public static string x264Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x264.exe";
+    public static string x265Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265.exe";
+    public static string x26510bPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265-10b.exe";
+    public static string Qaac64Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/qaac64.exe";
+    public static string FlacPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/flac.exe";
+    public static string OpusPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/opusenc.exe";
+    public static string WebpPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/cwebp.exe";
+}
 
 public class Program {
     internal static void Main(string[] args) {
-        string ffmpegPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/ffmpeg.exe";
-        string x264Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x264.exe";
-        string x265Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265.exe";
-        string x26510BPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/x265-10b.exe";
-        string qaac64Path = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/qaac64.exe";
-        string flacPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/flac.exe";
-        string opusPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/opusenc.exe";
-        string webpPath = $"{Environment.GetEnvironmentVariable("RUNNING_PATH_PREFIX") ?? "."}/codec/cwebp.exe";
 
 
         Console.WriteLine("Welcome to ShumeiEncoder");
@@ -76,37 +77,8 @@ public class Program {
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "wav") {
 
         }
-
-        if (CLIConsole.CheckStart()) {
-            Process ffmpegProcess = new Process {
-                StartInfo = new ProcessStartInfo {
-                    FileName = ffmpegPath,
-                    Arguments = $"-i {filePath} -f yuv4mpegpipe -an -v 0 - ",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            StreamReader ffmpegOutput = ffmpegProcess.StandardOutput;
-            StreamReader ffmpegError = ffmpegProcess.StandardError;
-
-            Process EncodecProcess = new Process {
-                StartInfo = new ProcessStartInfo {
-                    FileName = x264Path,
-                    Arguments = VideoEncodeArgs.ToString(),
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            StreamReader EncodecOutput = EncodecProcess.StandardOutput;
-            StreamReader EncodecError = EncodecProcess.StandardError;
-        }
-        CLIConsole.Exit();
     }
+
 
     private static void ArgsToCLIString(Preset preset, StringBuilder VideoEncodeCommand) {
         foreach (var videoArgs in preset.Video!.Args!) {
