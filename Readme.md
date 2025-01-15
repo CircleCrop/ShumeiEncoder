@@ -1,26 +1,86 @@
-# ��ݮ���� / ShumeiEncoder
+﻿# 树莓编码 / ShumeiEncoder
 
-����һ������������ѧ��ݮ�����ڵı��빤�ߡ�
+**树莓编码**是一款面向**苏州中学树莓社**的跨平台高效编码工具，旨在通过智能化流程简化媒体编码工作，适配多种格式与场景需求。
 
-����ƽ̨��`Windows 10/11 (x86 64bit)`��δ��������Ժ󣬽��� `MacOS (ARM)` ���Ƴ���
+当前支持平台：  
+- **Windows 10/11 (x86 64bit)**  
 
-���������ڴ����������ߵ��������׿����ߵĲ�������ֻ��Ҫ��ȷ��ʽ���󡪡�ʣ�µ��뽻�����ߡ�
+未来计划：  
+- **MacOS (ARM)**（开发中）
+- Linux (涉及 QAAC 替代，计划中)
 
-## Support Formats
-### Video
+---
 
-	**Decode**
-	Apple Prores Series, Avid DNx Series, H.264/AVC, H.265/HEVC
-	4:2:0/4:2:2/4:4:4 8/10bits
-	**Encode**
-	H.264/AVC, H.265/HEVC
-	4:2:0 8/10bits
+## 🛠 核心功能
 
-### Audio
+1. **高效编解码**：  
+   - 实现对主流视频/音频编解码格式的兼容。
+   - 支持 `4:2:0` / `4:2:2` / `4:4:4` 采样。
+   - 最大化利用 CPU/GPU 编解码能力。
 
-	**Decode**: AAC, FLAC, WAV
-	**Encode**: AAC, FLAC
+2. **用户友好性**：  
+   - 屏蔽底层复杂参数，自动调整最佳性能配置。
 
-### Container
+---
 
-	MP4, MOV, MKV, M4A (Audio Only), FLAC, WAV
+## 📹 视频
+
+### **解码 (Decode)**
+
+- 格式：  
+  - **Apple ProRes**
+  - **Avid DNxHD / DNxHR**
+  - **H.264/AVC**  
+  - **H.265/HEVC**
+- 色彩采样：4:2:0 / 4:2:2 / 4:4:4  
+- 位深：8-bit / 10-bit  
+
+### **编码 (Encode)**
+
+- 格式：  
+  - **H.264/AVC**  
+  - **H.265/HEVC**
+- 色彩采样：4:2:0  
+- 位深：8-bit / 10-bit  
+
+---
+
+## 🎵 音频
+
+### **解码 (Decode)**
+
+- AAC
+- FLAC
+- WAV
+
+### **编码 (Encode)**
+
+- AAC
+- FLAC
+
+---
+
+## 📦 容器
+
+- **MP4**  
+- **MOV**
+- **MKV**
+- **M4A**
+- **FLAC**  
+- **WAV**
+
+## 🔍 开发与未来计划
+
+To Do.
+
+---
+
+## 📝 项目参与
+
+[GitHub Issues](https://github.com/CircleCrop/ShumeiEncoder/issues)
+
+[Contact](mailto:contact@aiccrop.com)
+
+---
+
+> **让编码不再复杂，释放创作者的无限可能！**

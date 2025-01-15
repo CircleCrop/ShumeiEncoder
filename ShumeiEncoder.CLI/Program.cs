@@ -33,11 +33,11 @@ public class Program {
         Preset preset = deserializer.Deserialize<Preset>(yaml);
         Console.WriteLine($"{preset.Name}: {preset.Description ?? ""}");
 
-        string cachePath;
+        string cachePath = Path.GetDirectoryName(outputPath)! ;
         // 视频部分
         string videoCodec;
         StringBuilder VideoEncodeArgs;
-        BuildVideoEncodeArgs(outputPath, preset, out videoCodec, out cachePath, out VideoEncodeArgs);
+        BuildVideoEncodeArgs(cachePath, preset, out videoCodec, out cachePath, out VideoEncodeArgs);
 
         // 音频部分
         string audioCodec;
@@ -67,14 +67,14 @@ public class Program {
         }
     }
 
-    private static void BuildVideoEncodeArgs(string outputPath,
+    private static void BuildVideoEncodeArgs(string cachePath,
                                              Preset preset,
                                              out string codec,
                                              out string cacheStreamFilePath,
                                              out StringBuilder VideoEncodeArgs) {
         //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -v 0 - | x264 [options] --demuxer y4m -o output.264 -
         VideoEncodeArgs = new();
-        cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(outputPath)
+        cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)
                                            ?? "", "output_cache.264") ?? "";
 
         // 构造编码参数
