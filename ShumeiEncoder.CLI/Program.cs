@@ -33,49 +33,43 @@ public class Program {
         Preset preset = deserializer.Deserialize<Preset>(yaml);
         Console.WriteLine($"{preset.Name}: {preset.Description ?? ""}");
 
-        string cachePath = Path.GetDirectoryName(outputPath)! ;
+        string cachePath = Path.GetDirectoryName(outputPath)!;
+        List<(string Category, string FilePath)> outputStreams = new();
+
         // 视频部分
         string videoCodec;
         StringBuilder VideoEncodeArgs;
-        BuildVideoEncodeArgs(cachePath, preset, out videoCodec, out cachePath, out VideoEncodeArgs);
+        BuildArgs.VideoEncodeArgs(cachePath,
+                                  preset,
+                                  out videoCodec,
+                                  out string? videoStreamCacheFilePath,
+                                  out VideoEncodeArgs);
+        outputStreams.Add(("video", videoStreamCacheFilePath));
+        videoStreamCacheFilePath = null;
 
         // 音频部分
         string audioCodec;
         StringBuilder AudioEncodeArgs;
-        BuildAudioEncodeArgs(filePath, preset, cachePath, AudioEncodeArgs);
+        BuildArgs.AudioEncodeArgs(cachePath,
+                                  preset,
+                                  out audioCodec,
+                                  out string? audioStreamCacheFilePath,
+                                  out AudioEncodeArgs);
+        outputStreams.Add(("audio",  audioStreamCacheFilePath));
     }
+}
 
-    private static void BuildAudioEncodeArgs(string filePath,
-                                             Preset preset,
-                                             string cachePath,
-                                             out StringBuilder AudioEncodeArgs,
-                                             out string cacheFilePath) {
-        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
-            // 读取音频位深，避免 16 位量化误差【To Do】
-            StringBuilder AudioEncodeCommand =
-                new($"ffmpeg -i {filePath} -f wav - | qaac64 --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o {cachePath}\\output_cache.m4a\" -");
-            // 支持其他 AAC 参数【To Do】
 
-        }
-
-        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "flac") {
-
-        }
-
-        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "wav") {
-
-        }
-    }
-
-    private static void BuildVideoEncodeArgs(string cachePath,
-                                             Preset preset,
-                                             out string codec,
-                                             out string cacheStreamFilePath,
-                                             out StringBuilder VideoEncodeArgs) {
+internal class BuildArgs {
+    internal static void VideoEncodeArgs(string cachePath,
+                                         Preset preset,
+                                         out string codec,
+                                         out string cacheStreamFilePath,
+                                         out StringBuilder VideoEncodeArgs) {
         //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -v 0 - | x264 [options] --demuxer y4m -o output.264 -
         VideoEncodeArgs = new();
-        cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)
-                                           ?? "", "output_cache.264") ?? "";
+        codec = "";
+        cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.264") ?? "";
 
         // 构造编码参数
         if (preset.Video?.Fmt != null && preset.Video?.Args != null) {
@@ -87,11 +81,33 @@ public class Program {
             } else if (preset.Video.Fmt == "h265" || preset.Video.Fmt == "hevc") {
                 codec = "x265";
                 //
-            } else {
-                codec = "";
             }
 
             //Console.WriteLine($"VideoEncodeArgs: {VideoEncodeArgs.ToString()}\n");
+        }
+    }
+
+    internal static void AudioEncodeArgs(string cachePath,
+                                         Preset preset,
+                                         out string codec,
+                                         out string cacheStreamFilePath,
+                                         out StringBuilder AudioEncodeArgs) {
+        AudioEncodeArgs = new();
+        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
+            codec = "aac";
+            cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)!, "output_cache.m4a");
+            // 读取音频位深，避免 16 位量化误差【To Do】
+            AudioEncodeArgs.Append($" --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o \"{cacheStreamFilePath}\" -");
+            // 支持其他 AAC 参数【To Do】
+
+        }
+
+        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "flac") {
+
+        }
+
+        if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "wav") {
+
         }
     }
     private static void ArgsToCLIString(Preset preset, StringBuilder VideoEncodeCommand) {
