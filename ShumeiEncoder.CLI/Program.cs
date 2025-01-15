@@ -56,6 +56,8 @@ public class Program {
                                   out string? audioStreamCacheFilePath,
                                   out AudioEncodeArgs);
         outputStreams.Add(("audio",  audioStreamCacheFilePath));
+        audioStreamCacheFilePath = null;
+
     }
 }
 
