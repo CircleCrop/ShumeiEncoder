@@ -68,7 +68,7 @@ internal class BuildArgs {
                                          out string codec,
                                          out string cacheStreamFilePath,
                                          out StringBuilder VideoEncodeArgs) {
-        //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -v 0 - | x264 [options] --demuxer y4m -o output.264 -
+        //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -blocksize 262144 - | x264 [options] --demuxer y4m -o output.264 -
         VideoEncodeArgs = new();
         codec = "";
         cacheStreamFilePath = "";

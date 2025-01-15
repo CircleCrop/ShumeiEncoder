@@ -1,39 +1,62 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 
+/*
+ * 此文件暂时废弃，改用 cmd 直接输出，避免自己实现管道。
+ */
+
+
 public abstract class ComputeTask {
-    public abstract void DecodeTask(string inputFilePath,
-                                            string codec,
-                                            string args,
-                                            StreamReader pipe,
-                                            StreamReader stderr);
-    public abstract void EncodeTask(StreamReader pipe,
-                                    string codec,
+    public abstract void DecodeTask(string codec,
                                     string args,
-                                    string outputFilePath,
-                                    StreamReader stderr);
+                                    out StreamReader output,
+                                    out StreamReader stderr);
+    public abstract void EncodeTask(string codec,
+                                    string args,
+                                    out StreamReader stderr,
+                                    StreamReader input);
     // FrameProcessTask
     // MuxTask
     // DemuxTask
 }
 
 internal class ComputeApi : ComputeTask {
-    public override void DecodeTask(string inputFilePath, string codec, string args, StreamReader pipe, StreamReader stderr) {
-        string codecPath = GetCodecPath(codec) ?? CodecPath.FFmpeg;
+    public override void DecodeTask(string codec,
+                                    string args,
+                                    out StreamReader output,
+                                    out StreamReader stderr) {
+        string codecPath = /*GetCodecPath(codec) ?? */CodecPath.FFmpeg;
 
         // Set up the process
-        Process process = NewProcess(inputFilePath, codecPath, args);
+        Process process = NewProcess(codecPath, args);
         process.Start();
 
         // Assign out parameters for the output and error streams
-        pipe = process.StandardOutput;
+        output = process.StandardOutput;
         stderr = process.StandardError;
 
-        process.WaitForExit();
     }
 
-    public override void EncodeTask(StreamReader pipe, string codec, string args, string outputFilePath, StreamReader stderr) {
-        throw new NotImplementedException();
+    public override void EncodeTask(string codec,
+                                    string args,
+                                    out StreamReader stderr,
+                                    StreamReader input) {
+        string codecPath = GetCodecPath(codec);
+
+        // Set up the process
+        Process process = NewProcess(codecPath, args);
+        process.Start();
+
+        // Assign out parameters for the output and error streams
+
+        stderr = process.StandardError;
+
+        while (!input.EndOfStream) {
+            string line = input.ReadLine()!;
+            process.StandardInput.WriteLine(line);  // 将 FFmpeg 输出的 YUV 数据传递给 x264
+        }
+
+        process.WaitForExit();
     }
 
     void PrepareTask(string VideoCodec) {
@@ -95,11 +118,11 @@ internal class ComputeApi : ComputeTask {
         return codecPath;
     }
 
-    private static Process NewProcess(string inputFilePath, string? codecPath, string args) {
+    private static Process NewProcess(string? codecPath, string args) {
         return new Process {
             StartInfo = new ProcessStartInfo {
                 FileName = codecPath,
-                Arguments = $"-i \"{inputFilePath}\" {args}",
+                Arguments = args,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
