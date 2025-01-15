@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using YamlDotNet.Serialization;
 
 public class Program {
@@ -21,10 +22,13 @@ public class Program {
          */
         // 选择文件和预设
         string filePath = CLIApi.ChooseFile("Input File: ");
+        Console.WriteLine(filePath + "\n");
 
         string presetPath = CLIApi.ChooseFile("YAML Preset File: ");
+        Console.WriteLine(presetPath + "\n");
 
         string outputPath = CLIApi.ChooseFile("Output Path: ");
+        Console.WriteLine(outputPath + "\n");
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
@@ -45,7 +49,6 @@ public class Program {
                                   out string? videoStreamCacheFilePath,
                                   out VideoEncodeArgs);
         outputStreams.Add(("video", videoStreamCacheFilePath));
-        videoStreamCacheFilePath = null;
 
         // 音频部分
         string audioCodec;
@@ -55,9 +58,65 @@ public class Program {
                                   out audioCodec,
                                   out string? audioStreamCacheFilePath,
                                   out AudioEncodeArgs);
-        outputStreams.Add(("audio",  audioStreamCacheFilePath));
-        audioStreamCacheFilePath = null;
+        outputStreams.Add(("audio", audioStreamCacheFilePath));
 
+        string videoEncodeCommand = $"\"{CodecPath.FFmpeg}\" -i \"{filePath}\" -f yuv4mpegpipe -pix_fmt yuv420p -an -blocksize 262144 - | \"{videoCodec}\" {VideoEncodeArgs.ToString()}";
+        string audioEncodeCommand = $"\"{CodecPath.FFmpeg}\" -i \"{filePath}\" -f wav -blocksize 65535 - | \"{audioCodec}\" {AudioEncodeArgs.ToString()}";
+        string muxCommand = $"\"{CodecPath.FFmpeg}\" -i \"{videoStreamCacheFilePath}\" -i \"{audioStreamCacheFilePath}\" -c copy \"{outputPath}\"";
+
+        Console.Clear();
+        Console.WriteLine(videoEncodeCommand);
+        Console.WriteLine(audioEncodeCommand);
+        Console.WriteLine(muxCommand);
+        Console.WriteLine();
+
+        ProcessStartInfo videoStartInfo = new ProcessStartInfo {
+            FileName = "cmd.exe",          // 调用 cmd.exe
+            Arguments = $"/c \"{videoEncodeCommand}\" && timeout /t 1",  // 使用 /c 执行单个命令后退出
+            RedirectStandardInput = false,  // 不重定向输入
+            RedirectStandardOutput = false, // 不重定向输出
+            RedirectStandardError = false,  // 不重定向错误
+            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
+            CreateNoWindow = false          // 使用当前窗口
+        };
+
+        ProcessStartInfo audioStartInfo = new ProcessStartInfo {
+            FileName = "cmd.exe",          // 调用 cmd.exe
+            Arguments = $"/c \"{audioEncodeCommand}\"  && timeout /t 1",  // 使用 /c 执行单个命令后退出
+            RedirectStandardInput = false,  // 不重定向输入
+            RedirectStandardOutput = false, // 不重定向输出
+            RedirectStandardError = false,  // 不重定向错误
+            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
+            CreateNoWindow = false          // 使用当前窗口
+        };
+
+        ProcessStartInfo muxStartInfo = new ProcessStartInfo {
+            FileName = "cmd.exe",          // 调用 cmd.exe
+            Arguments = $"/c \"{muxCommand}\"  && timeout /t 1",  // 使用 /c 执行单个命令后退出
+            RedirectStandardInput = false,  // 不重定向输入
+            RedirectStandardOutput = false, // 不重定向输出
+            RedirectStandardError = false,  // 不重定向错误
+            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
+            CreateNoWindow = false          // 使用当前窗口
+        };
+
+        // 启动视频编码
+        using (Process videoProcess = Process.Start(videoStartInfo)!) {
+            videoProcess.WaitForExit();
+        }
+
+        // 启动音频编码
+        using (Process audioProcess = Process.Start(audioStartInfo)!) {
+            audioProcess.WaitForExit();
+        }
+
+        using (Process muxProcess = Process.Start(muxStartInfo)!) {
+            muxProcess.WaitForExit();
+        }
+
+        Console.WriteLine("Encoding Success! File Path: " + outputPath);
+
+        CLIApi.Exit();
     }
 }
 
@@ -78,11 +137,11 @@ internal class BuildArgs {
             VideoEncodeArgs.Append($"--demuxer y4m");
             ArgsToCLIString(preset, VideoEncodeArgs);
             if (preset.Video.Fmt == "h264" || preset.Video.Fmt == "avc") {
-                codec = "x264";
+                codec = CodecPath.x264;
                 cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.264") ?? "";
                 VideoEncodeArgs.Append($" -o \"{cacheStreamFilePath}\" -");
             } else if (preset.Video.Fmt == "h265" || preset.Video.Fmt == "hevc") {
-                codec = "x265";
+                codec = CodecPath.x265;
                 cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.265") ?? "";
                 //
             }
@@ -100,7 +159,7 @@ internal class BuildArgs {
         codec = "";
         cacheStreamFilePath = "";
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
-            codec = "aac";
+            codec = CodecPath.Qaac64;
             cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)!, "output_cache.m4a");
             // 读取音频位深，避免 16 位量化误差【To Do】
             AudioEncodeArgs.Append($" --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o \"{cacheStreamFilePath}\" -");
@@ -129,11 +188,7 @@ internal class CLIApi() {
         Console.Write(prompt);
         string path = Console.ReadLine() ?? "";
         Console.WriteLine();
-        if (string.IsNullOrWhiteSpace(path)) {
-            return path.Trim().Trim('\"', '\'');
-        } else {
-            return "";
-        }
+        return path.Trim().Trim('\"', '\'');
     }
     public static Boolean CheckStart() {
         Console.Write("Start Processing? (y/n) ");

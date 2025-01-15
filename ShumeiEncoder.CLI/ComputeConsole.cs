@@ -92,7 +92,7 @@ internal class ComputeApi : ComputeTask {
         }*/
     }
 
-    private static string GetCodecPath(string codec) {
+    public static string GetCodecPath(string codec) {
         // Use reflection to get the codec path (ChatGPT)
         string? codecPath;
         try {
@@ -100,13 +100,15 @@ internal class ComputeApi : ComputeTask {
             Type codecPathType = typeof(CodecPath);
 
             // 通过反射获取静态属性的值
-            PropertyInfo? property = codecPathType.GetProperty(codec, BindingFlags.Public | BindingFlags.Static);
+            PropertyInfo? property = codecPathType.GetProperty(codec.ToLower(), BindingFlags.Public | BindingFlags.Static);
+
             if (property == null) {
                 throw new InvalidOperationException($"Codec '{codec}' is not defined in CodecPath.");
             }
 
             // 获取属性的值
             codecPath = property.GetValue(null)?.ToString();
+
         } catch (Exception ex) {
             throw new InvalidOperationException($"Failed to resolve codec path for '{codec}'.", ex);
         }

@@ -9,27 +9,28 @@ public class CodecPath {
 
     // 判断当前平台是否为 Mac
     private static bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
+    private static string codecDir = "codecs";
     // 编解码器属性
-    public static string FFmpeg => Path.Combine(PathPrefix, "codec", "ffmpeg.exe");
-    public static string x264 => Path.Combine(PathPrefix, "codec", "x264.exe");
-    public static string x265 => Path.Combine(PathPrefix, "codec", "x265.exe");
-    public static string x26510b => Path.Combine(PathPrefix, "codec", "x265-10b.exe");
-    public static string Qaac64 => Path.Combine(PathPrefix, "codec", "qaac64.exe");
-    public static string Flac => Path.Combine(PathPrefix, "codec", "flac.exe");
-    public static string Opus => Path.Combine(PathPrefix, "codec", "opusenc.exe");
-    public static string Webp => Path.Combine(PathPrefix, "codec", "cwebp.exe");
+    public static string FFmpeg => Path.Combine(PathPrefix, codecDir, "ffmpeg.exe");
+    public static string x264 => Path.Combine(PathPrefix, codecDir, "x264.exe");
+    public static string x265 => Path.Combine(PathPrefix, codecDir, "x265.exe");
+    public static string x26510b => Path.Combine(PathPrefix, codecDir, "x265-10b.exe");
+    public static string Qaac64 => Path.Combine(PathPrefix, codecDir, "qaac64.exe");
+    public static string Flac => Path.Combine(PathPrefix, codecDir, "flac.exe");
+    public static string Opus => Path.Combine(PathPrefix, codecDir, "opusenc.exe");
+    public static string Webp => Path.Combine(PathPrefix, codecDir, "cwebp.exe");
 
     // 字典映射编解码器名称到路径
     private static readonly Dictionary<string, Func<string>> codecPaths = new() {
         { "x264", () => x264 },
         { "x265", () => x265 },
-        { "FFmpeg", () => FFmpeg },
+        { "ffmpeg", () => FFmpeg },
         { "x26510b", () => x26510b },
-        { "Qaac", () => Qaac64 },
-        { "Flac", () => Flac },
-        { "Opus", () => Opus },
-        { "Webp", () => Webp }
+        { "qaac", () => Qaac64 },
+        { "aac", () => Qaac64 },
+        { "flac", () => Flac },
+        { "opus", () => Opus },
+        { "webp", () => Webp }
     };
 
     // 获取指定的 codec 路径
@@ -41,7 +42,7 @@ public class CodecPath {
             }
             return path;
         } else {
-            return Path.Combine(PathPrefix, "codec");
+            return Path.Combine(PathPrefix, codecDir);
         }
     }
 }
