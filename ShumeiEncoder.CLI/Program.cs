@@ -69,7 +69,7 @@ internal class BuildArgs {
         //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -v 0 - | x264 [options] --demuxer y4m -o output.264 -
         VideoEncodeArgs = new();
         codec = "";
-        cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.264") ?? "";
+        cacheStreamFilePath = "";
 
         // 构造编码参数
         if (preset.Video?.Fmt != null && preset.Video?.Args != null) {
@@ -77,9 +77,11 @@ internal class BuildArgs {
             ArgsToCLIString(preset, VideoEncodeArgs);
             if (preset.Video.Fmt == "h264" || preset.Video.Fmt == "avc") {
                 codec = "x264";
+                cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.264") ?? "";
                 VideoEncodeArgs.Append($" -o \"{cacheStreamFilePath}\" -");
             } else if (preset.Video.Fmt == "h265" || preset.Video.Fmt == "hevc") {
                 codec = "x265";
+                cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.265") ?? "";
                 //
             }
 
@@ -93,6 +95,8 @@ internal class BuildArgs {
                                          out string cacheStreamFilePath,
                                          out StringBuilder AudioEncodeArgs) {
         AudioEncodeArgs = new();
+        codec = "";
+        cacheStreamFilePath = "";
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
             codec = "aac";
             cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)!, "output_cache.m4a");
