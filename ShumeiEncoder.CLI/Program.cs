@@ -22,13 +22,26 @@ public class Program {
          */
         // 选择文件和预设
         string filePath = CLIApi.ChooseFile("Input File: ");
-        Console.WriteLine(filePath + "\n");
+        Console.WriteLine($"Select: {filePath}\n");
 
         string presetPath = CLIApi.ChooseFile("YAML Preset File: ");
-        Console.WriteLine(presetPath + "\n");
+        Console.WriteLine($"Select: {presetPath}\n");
 
-        string outputPath = CLIApi.ChooseFile("Output Path: ");
-        Console.WriteLine(outputPath + "\n");
+        bool shouldReselectOutputFile = false;
+        string outputPath;
+        do {
+            outputPath = CLIApi.ChooseFile("Output Path: ");
+            Console.WriteLine($"Select: {outputPath}\n");
+            if (File.Exists(outputPath)) {
+                shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n):");
+            } else if(Directory.Exists(outputPath)) {
+                shouldReselectOutputFile = CLIApi.CheckStart("Output file is a dictionary. Select again? (y/n):");
+            } else {
+                shouldReselectOutputFile = true;
+            }
+        } while (!shouldReselectOutputFile);
+
+        CLIApi.CheckStart("Start Processing? (y/n):");
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
@@ -60,63 +73,67 @@ public class Program {
                                   out AudioEncodeArgs);
         outputStreams.Add(("audio", audioStreamCacheFilePath));
 
-        string videoEncodeCommand = $"\"{CodecPath.FFmpeg}\" -i \"{filePath}\" -f yuv4mpegpipe -pix_fmt yuv420p -an -blocksize 262144 - | \"{videoCodec}\" {VideoEncodeArgs.ToString()}";
-        string audioEncodeCommand = $"\"{CodecPath.FFmpeg}\" -i \"{filePath}\" -f wav -blocksize 65535 - | \"{audioCodec}\" {AudioEncodeArgs.ToString()}";
-        string muxCommand = $"\"{CodecPath.FFmpeg}\" -i \"{videoStreamCacheFilePath}\" -i \"{audioStreamCacheFilePath}\" -c copy \"{outputPath}\"";
+        string videoEncodeCommand = $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{filePath}\" -f yuv4mpegpipe -pix_fmt yuv420p -an -blocksize 262144 - | \"{videoCodec}\" {VideoEncodeArgs.ToString()}";
+        // Blocksize = 256KB
 
-        Console.Clear();
-        Console.WriteLine(videoEncodeCommand);
-        Console.WriteLine(audioEncodeCommand);
-        Console.WriteLine(muxCommand);
-        Console.WriteLine();
+        string audioEncodeCommand = $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{filePath}\" -f wav - | \"{audioCodec}\" {AudioEncodeArgs.ToString()}";
 
-        ProcessStartInfo videoStartInfo = new ProcessStartInfo {
-            FileName = "cmd.exe",          // 调用 cmd.exe
-            Arguments = $"/c \"{videoEncodeCommand}\" && timeout /t 1",  // 使用 /c 执行单个命令后退出
-            RedirectStandardInput = false,  // 不重定向输入
-            RedirectStandardOutput = false, // 不重定向输出
-            RedirectStandardError = false,  // 不重定向错误
-            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
-            CreateNoWindow = false          // 使用当前窗口
-        };
+        string muxCommand = $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{videoStreamCacheFilePath}\" -i \"{audioStreamCacheFilePath}\" -c copy \"{outputPath}\"";
 
-        ProcessStartInfo audioStartInfo = new ProcessStartInfo {
-            FileName = "cmd.exe",          // 调用 cmd.exe
-            Arguments = $"/c \"{audioEncodeCommand}\"  && timeout /t 1",  // 使用 /c 执行单个命令后退出
-            RedirectStandardInput = false,  // 不重定向输入
-            RedirectStandardOutput = false, // 不重定向输出
-            RedirectStandardError = false,  // 不重定向错误
-            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
-            CreateNoWindow = false          // 使用当前窗口
-        };
+        /*
+         * Console.Clear();
+         * Console.WriteLine(videoEncodeCommand);
+         * Console.WriteLine(audioEncodeCommand);
+         * Console.WriteLine(muxCommand);
+         * Console.WriteLine();
+         */
 
-        ProcessStartInfo muxStartInfo = new ProcessStartInfo {
-            FileName = "cmd.exe",          // 调用 cmd.exe
-            Arguments = $"/c \"{muxCommand}\"  && timeout /t 1",  // 使用 /c 执行单个命令后退出
-            RedirectStandardInput = false,  // 不重定向输入
-            RedirectStandardOutput = false, // 不重定向输出
-            RedirectStandardError = false,  // 不重定向错误
-            UseShellExecute = true,         // 启用 shell 执行（支持管道等操作）
-            CreateNoWindow = false          // 使用当前窗口
-        };
+        Console.WriteLine(videoEncodeCommand + "\n\n");
+        CreateComputeProcess(videoEncodeCommand, Path.GetFileNameWithoutExtension(videoCodec));
 
-        // 启动视频编码
-        using (Process videoProcess = Process.Start(videoStartInfo)!) {
-            videoProcess.WaitForExit();
-        }
+        Console.WriteLine(audioEncodeCommand + "\n\n");
+        CreateComputeProcess(audioEncodeCommand, Path.GetFileNameWithoutExtension(audioCodec));
 
-        // 启动音频编码
-        using (Process audioProcess = Process.Start(audioStartInfo)!) {
-            audioProcess.WaitForExit();
-        }
+        Console.WriteLine(muxCommand + "\n\n");
+        CreateComputeProcess(muxCommand, "FFmpeg");
 
-        using (Process muxProcess = Process.Start(muxStartInfo)!) {
-            muxProcess.WaitForExit();
-        }
-
-        Console.WriteLine("Encoding Success! File Path: " + outputPath);
+        Console.WriteLine("\n\nEncoding Success! File Path: " + outputPath);
 
         CLIApi.Exit();
+    }
+
+    internal static void CreateComputeProcess(string command, string codec = "Compute") {
+        ProcessStartInfo startInfo = new() {
+            FileName = "cmd.exe",
+            Arguments = $"/c \"{command} && timeout /t 0 >nul\"",
+            RedirectStandardInput = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        // 启动编码
+        using (Process process = new()) {
+            process.StartInfo = startInfo;
+
+            process.OutputDataReceived += (sender, args) => {
+                if (!string.IsNullOrEmpty(args.Data)) {
+                    Console.WriteLine($"[{codec}] {args.Data}");
+                }
+            };
+
+            process.ErrorDataReceived += (sender, args) => {
+                if (!string.IsNullOrEmpty(args.Data)) {
+                    Console.Error.WriteLine($"[{codec}] {args.Data}");
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+        }
     }
 }
 
@@ -138,11 +155,11 @@ internal class BuildArgs {
             ArgsToCLIString(preset, VideoEncodeArgs);
             if (preset.Video.Fmt == "h264" || preset.Video.Fmt == "avc") {
                 codec = CodecPath.x264;
-                cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.264") ?? "";
+                cacheStreamFilePath = Path.Combine(cachePath ?? "", "output_cache.264") ?? "";
                 VideoEncodeArgs.Append($" -o \"{cacheStreamFilePath}\" -");
             } else if (preset.Video.Fmt == "h265" || preset.Video.Fmt == "hevc") {
                 codec = CodecPath.x265;
-                cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath) ?? "", "output_cache.265") ?? "";
+                cacheStreamFilePath = Path.Combine(cachePath ?? "", "output_cache.265") ?? "";
                 //
             }
 
@@ -160,7 +177,7 @@ internal class BuildArgs {
         cacheStreamFilePath = "";
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
             codec = CodecPath.Qaac64;
-            cacheStreamFilePath = Path.Combine(Path.GetDirectoryName(cachePath)!, "output_cache.m4a");
+            cacheStreamFilePath = Path.Combine(cachePath, "output_cache.m4a");
             // 读取音频位深，避免 16 位量化误差【To Do】
             AudioEncodeArgs.Append($" --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o \"{cacheStreamFilePath}\" -");
             // 支持其他 AAC 参数【To Do】
@@ -190,8 +207,8 @@ internal class CLIApi() {
         Console.WriteLine();
         return path.Trim().Trim('\"', '\'');
     }
-    public static Boolean CheckStart() {
-        Console.Write("Start Processing? (y/n) ");
+    public static bool CheckStart(string prompt) {
+        Console.Write(prompt);
         string input = Console.ReadLine() ?? "";
         return input.Trim() switch {
             "y" => true,
