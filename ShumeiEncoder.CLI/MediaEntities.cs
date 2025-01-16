@@ -5,11 +5,12 @@
     public Stream? Video { get; set; }
     public Stream? Audio { get; set; }
     public Stream? Container { get; set; }
-    public Dictionary<string, string>? Metadata { get; set; }
+    //public Dictionary<string, string>? Metadata { get; set; }
     public Dictionary<string, string>? Custom { get; set; }
     public class Stream {
         public required string Fmt { get; set; } // 格式，例如 h264, aac
         public Dictionary<string, string>? Args { get; set; } // 动态参数
+        public List<string>? Flags { get; set; }
     }
 }
 

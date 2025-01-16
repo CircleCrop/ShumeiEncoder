@@ -1,0 +1,20 @@
+Name: Test Preset 1
+Description: A test preset using h264 and aac formats.
+Version: 1.0
+Video:
+    Fmt: h264 # 可选 h264, avc, h265, hevc
+    Args: # 如果定义了格式，需要带上 Args 即便其为空
+        crf: 23
+        ref: 7
+    Flags: # Flags 可以为空
+Audio:
+    Fmt: aac # 可选 aac, flac, wav
+    Args: # 如果定义了格式，需要带上 Args 即便其为空
+        quality: 127
+        mode: tvbr
+Container:
+    Fmt: mp4 # 可选 mp4, mov, mkv, m4a, flac, wav
+    Args: # 如果定义了格式，需要带上 Args 即便其为空
+        Performer: Digital Media Association of SHS
+Custom: # 预留
+    Key1: test

@@ -1,0 +1,32 @@
+Name: "[Archive] AVC 1080P 30Fps AAC 320Kbps"
+Description: 
+Version: 1.0
+Video:
+    Fmt: h264 #h264, avc, h265, hevc
+    Args:
+        preset: veryslow
+        crf: 18
+        ref: 7
+        partitions: all
+        aq-mode: 3
+        qcomp: 0.7
+        qpmax: 32
+        bframes: 4
+        keyint: 300
+        min-keyint: 1
+    Flags:
+        - no-fast-pskip
+        - no-dct-decimate
+        - opencl
+        - no-psy
+Audio:
+    Fmt: aac #aac, flac, wav
+    Args:
+        quality: 127
+        mode: tvbr
+Container:
+    Fmt: mp4
+    Args: 
+        performer: Digital Media Association of SHS
+Custom:
+    Key1: test

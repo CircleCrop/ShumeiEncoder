@@ -30,18 +30,16 @@ public class Program {
         // 选择文件和预设
         string filePath = CLIApi.ChooseFile("Input File: ");
         Log.Information($"Select: {filePath}");
-        Console.WriteLine();
 
         string presetPath = CLIApi.ChooseFile("YAML Preset File: ");
-        Console.WriteLine();
-        Console.WriteLine($"Select: {presetPath}");
+        Log.Information($"Select: {presetPath}");
 
-        bool shouldReselectOutputFile = false;
         string outputPath;
+
+        bool shouldReselectOutputFile;
         do {
             outputPath = CLIApi.ChooseFile("Output Path: ");
-            Console.WriteLine();
-            Console.WriteLine($"Select: {outputPath}");
+            Log.Information($"Select: {outputPath}");
             if (File.Exists(outputPath)) {
                 shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n): ");
             } else if (Directory.Exists(outputPath)) {
@@ -52,14 +50,21 @@ public class Program {
         } while (!shouldReselectOutputFile);
 
         CLIApi.CheckStart("Start Processing? (y/n):");
-        Console.WriteLine();
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
-        var deserializer = new DeserializerBuilder().Build();
+        var deserializer = new DeserializerBuilder().WithNamingConvention(new CustomNamingConvention()).Build();
         var yaml = File.ReadAllText(presetPath);
         Preset preset = deserializer.Deserialize<Preset>(yaml);
-        Console.WriteLine($"{preset.Name}: {preset.Description ?? ""}");
+        Log.Information($"{preset.Name}: {preset.Description ?? ""}");
+        if (preset.Audio != null) {
+            if (preset.Audio.Args == null) {
+                preset.Audio.Args = new();
+            }
+            if (preset.Audio.Fmt == "aac" && !preset.Audio!.Args!.TryGetValue("quality", out _)) {
+                preset.Audio!.Args!.Add("quality", "127");
+            }
+        }
 
         string cachePath = Path.GetDirectoryName(outputPath)!;
         List<(string Category, string FilePath)> outputStreams = new();
@@ -130,13 +135,13 @@ public class Program {
 
             process.OutputDataReceived += (sender, args) => {
                 if (!string.IsNullOrEmpty(args.Data)) {
-                    Console.WriteLine($"[{codec}] {args.Data}");
+                    Log.Information($"[{codec}] {args.Data}");
                 }
             };
 
             process.ErrorDataReceived += (sender, args) => {
                 if (!string.IsNullOrEmpty(args.Data)) {
-                    Console.Error.WriteLine($"[{codec}] {args.Data}");
+                    Log.Information($"[{codec}] {args.Data}");
                 }
             };
 
@@ -163,7 +168,7 @@ internal class BuildArgs {
         // 构造编码参数
         if (preset.Video?.Fmt != null && preset.Video?.Args != null) {
             VideoEncodeArgs.Append($"--demuxer y4m");
-            ArgsToCLIString(preset, VideoEncodeArgs);
+            ArgsToCLIString(preset.Video, VideoEncodeArgs);
             if (preset.Video.Fmt == "h264" || preset.Video.Fmt == "avc") {
                 codec = CodecPath.x264;
                 cacheStreamFilePath = Path.Combine(cachePath ?? "", "output_cache.264") ?? "";
@@ -190,8 +195,9 @@ internal class BuildArgs {
             codec = CodecPath.Qaac64;
             cacheStreamFilePath = Path.Combine(cachePath, "output_cache.m4a");
             // 读取音频位深，避免 16 位量化误差【To Do】
-            AudioEncodeArgs.Append($" --tvbr {preset.Audio.Args?["quality"] ?? "127"} -o \"{cacheStreamFilePath}\" -");
-            // 支持其他 AAC 参数【To Do】
+            ArgsToCLIString(preset.Audio, AudioEncodeArgs);
+            AudioEncodeArgs.Append($" -o \"{cacheStreamFilePath}\" -");
+            // 支持其他 AAC 参数【已完成】
 
         }
 
@@ -203,9 +209,18 @@ internal class BuildArgs {
 
         }
     }
-    private static void ArgsToCLIString(Preset preset, StringBuilder VideoEncodeCommand) {
-        foreach (var videoArgs in preset.Video!.Args!) {
-            VideoEncodeCommand.Append($" --{videoArgs.Key}={videoArgs.Value}");
+    private static void ArgsToCLIString(Preset.Stream p_stream, StringBuilder VideoEncodeCommand) {
+        if (p_stream != null) {
+            if (p_stream.Args != null) {
+                foreach (var videoArgs in p_stream!.Args!) {
+                    VideoEncodeCommand.Append($" --{videoArgs.Key}={videoArgs.Value}");
+                }
+            }
+            if (p_stream.Flags != null) {
+                foreach (string flags in p_stream!.Flags!) {
+                    VideoEncodeCommand.Append($" --{flags}");
+                }
+            }
         }
     }
 }
@@ -232,4 +247,18 @@ internal class CLIApi() {
         Console.WriteLine("Press any key to exit...");
         Console.ReadLine();
     }
+}
+
+
+public class CustomNamingConvention : INamingConvention {
+    // 应用命名约定（首字母大写）
+    public string Apply(string value) {
+        if (string.IsNullOrEmpty(value)) { 
+            return value;
+        }
+        return char.ToUpper(value[0]) + value.Substring(1).ToLower();
+    }
+
+    // 还原命名约定（如果需要将名称还原到原始形式）
+    public string Reverse(string value) => value;
 }

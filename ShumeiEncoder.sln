@@ -8,7 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{6B363B22-0A04-47DE-ACFA-8C6CF0099271}"
 	ProjectSection(SolutionItems) = preProject
 		Readme.md = Readme.md
-		static\tests\test-1.yml = static\tests\test-1.yml
 	EndProjectSection
 EndProject
 Global
