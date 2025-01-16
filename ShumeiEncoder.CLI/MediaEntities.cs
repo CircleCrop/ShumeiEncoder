@@ -1,4 +1,6 @@
-﻿public class Preset {
+﻿using System.Text.Json;
+
+public class Preset {
     public required string Name { get; set; }
     public string? Description { get; set; }
     public required string Version { get; set; }
@@ -39,5 +41,21 @@ public class FileInfo {
         public int? AudioBitrate { get; set; } // kbps
         public int? AudioChannel { get; set; } // 默认 2，立体声
         public int? AudioOffset { get; set; } // ms}
+    }
+    public FileInfo(string json) {
+        JsonDocument document = JsonDocument.Parse(json);
+    }
+}
+
+
+public class SupportFormat {
+    public static readonly List<string> Container = ["mp4", "mov", "mkv", "m4a", "flac", "wav"];
+    public static readonly List<string> VideoContainer = ["mp4", "mov", "mkv"];
+    public static readonly List<string> AudioContainer = ["m4a", "flac", "wav"];
+    public static readonly List<string> Preset = ["yml", "yaml", "txt"];
+    public static readonly List<string> VideoStream = [];
+    public static readonly List<string> AudioStream = [];
+    public SupportFormat() {
+        
     }
 }

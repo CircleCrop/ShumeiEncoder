@@ -5,13 +5,17 @@ using YamlDotNet.Serialization;
 
 public class Program {
     internal static void Main(string[] args) {
-
-        Console.WriteLine("Welcome to ShumeiEncoder\n");
-
         Log.Logger = new LoggerConfiguration().WriteTo.Console(
             theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
             outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u4}]] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
+
+        if (!args.Contains("disable-utf8")) {
+            Console.OutputEncoding = Encoding.UTF8;
+            Log.Information("Current output encoding: UTF-8.");
+        }
+
+        CLIApi.WelcomeInfomation();
 
         /*Console.WriteLine("Please input a file...");
         string? newInputPath = Console.ReadLine();
@@ -27,6 +31,7 @@ public class Program {
          * 子菜单 - 按任意键退出
          */
 
+
         // 选择文件和预设
         string filePath = CLIApi.ChooseFile("Input File: ");
         Log.Information($"Select: {filePath}");
@@ -35,15 +40,18 @@ public class Program {
         Log.Information($"Select: {presetPath}");
 
         string outputPath;
-
-        bool shouldReselectOutputFile;
+        bool shouldReselectOutputFile = false;
         do {
             outputPath = CLIApi.ChooseFile("Output Path: ");
             Log.Information($"Select: {outputPath}");
             if (File.Exists(outputPath)) {
                 shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n): ");
             } else if (Directory.Exists(outputPath)) {
-                shouldReselectOutputFile = CLIApi.CheckStart("Output file is a dictionary. Select again? (y/n): ");
+                CLIApi.Tips("Output file is a dictionary. Select again.\n");
+                shouldReselectOutputFile = true;
+            } else if (!SupportFormat.Container.Contains(Path.GetExtension(outputPath))) {
+                CLIApi.Tips("Unsupport format. Select again.\n");
+                shouldReselectOutputFile = true;
             } else {
                 shouldReselectOutputFile = true;
             }
@@ -53,18 +61,7 @@ public class Program {
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
-        var deserializer = new DeserializerBuilder().WithNamingConvention(new CustomNamingConvention()).Build();
-        var yaml = File.ReadAllText(presetPath);
-        Preset preset = deserializer.Deserialize<Preset>(yaml);
-        Log.Information($"{preset.Name}: {preset.Description ?? ""}");
-        if (preset.Audio != null) {
-            if (preset.Audio.Args == null) {
-                preset.Audio.Args = new();
-            }
-            if (preset.Audio.Fmt == "aac" && !preset.Audio!.Args!.TryGetValue("quality", out _)) {
-                preset.Audio!.Args!.Add("quality", "127");
-            }
-        }
+        Preset preset = DeserializerYAML(presetPath);
 
         string cachePath = Path.GetDirectoryName(outputPath)!;
         List<(string Category, string FilePath)> outputStreams = new();
@@ -118,10 +115,27 @@ public class Program {
         CLIApi.Exit();
     }
 
+    private static Preset DeserializerYAML(string presetPath) {
+        var deserializer = new DeserializerBuilder().WithNamingConvention(new CustomNamingConvention()).Build();
+        var yaml = File.ReadAllText(presetPath);
+        Preset preset = deserializer.Deserialize<Preset>(yaml);
+        Log.Information($"{preset.Name}: {preset.Description ?? ""}");
+        if (preset.Audio != null) {
+            if (preset.Audio.Args == null) {
+                preset.Audio.Args = new();
+            }
+            if (preset.Audio.Fmt == "aac" && !preset.Audio!.Args!.TryGetValue("quality", out _)) {
+                preset.Audio!.Args!.Add("quality", "127");
+            }
+        }
+
+        return preset;
+    }
+
     internal static void CreateComputeProcess(string command, string codec = "Compute") {
         ProcessStartInfo startInfo = new() {
             FileName = "cmd.exe",
-            Arguments = $"/c \"{command} && timeout /t 0 >nul\"",
+            Arguments = $"/c \"chcp 65001 >nul && {command} && timeout /t 0 >nul\"",
             RedirectStandardInput = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -226,34 +240,10 @@ internal class BuildArgs {
 }
 
 
-internal class CLIApi() {
-    public static string ChooseFile(string prompt) {
-        Console.Write(prompt);
-        string path;
-        do {
-            path = Console.ReadLine() ?? "";
-        } while (path.Trim().Trim('\"', '\'') == "");
-        return path.Trim().Trim('\"', '\'');
-    }
-    public static bool CheckStart(string prompt) {
-        Console.Write(prompt);
-        string input = Console.ReadLine() ?? "";
-        return input.Trim() switch {
-            "y" => true,
-            _ => false,
-        };
-    }
-    public static void Exit() {
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadLine();
-    }
-}
-
-
 public class CustomNamingConvention : INamingConvention {
     // 应用命名约定（首字母大写）
     public string Apply(string value) {
-        if (string.IsNullOrEmpty(value)) { 
+        if (string.IsNullOrEmpty(value)) {
             return value;
         }
         return char.ToUpper(value[0]) + value.Substring(1).ToLower();
