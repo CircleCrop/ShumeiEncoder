@@ -1,7 +1,7 @@
 ﻿using Serilog;
 
 internal class CLIApi() {
-    public static string ChooseFile(string prompt) {
+    internal static string ChooseFile(string prompt) {
         Console.Write(prompt);
         string path;
         do {
@@ -9,7 +9,7 @@ internal class CLIApi() {
         } while (path.Trim().Trim('\"', '\'') == "");
         return path.Trim().Trim('\"', '\'');
     }
-    public static bool CheckStart(string prompt) {
+    internal static bool CheckStart(string prompt) {
         Console.Write(prompt);
         string input = Console.ReadLine() ?? "";
         return input.Trim() switch {
@@ -17,15 +17,15 @@ internal class CLIApi() {
             _ => false,
         };
     }
-    public static void Tips(string prompt) {
+    internal static void Tips(string prompt) {
         Console.WriteLine(prompt + "\n");
     }
-    public static void Exit() {
+    internal static void Exit() {
         Console.WriteLine("Press any key to exit...");
         Console.ReadLine();
     }
 
-    public static void WelcomeInfomation() {
+    internal static void WelcomeInfomation() {
         Log.Information("Github Url\t: https://github.com/CircleCrop/ShumeiEncoder");
         Log.Information("Author Url\t: https://aiccrop.com");
         Log.Information($"Welcome to ShumeiEncoder!");
