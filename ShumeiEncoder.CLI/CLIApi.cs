@@ -1,14 +1,33 @@
 ﻿using Serilog;
+using System;
 
 internal class CLIApi() {
     internal static string ChooseFile(string prompt) {
-        Console.Write(prompt);
         string path;
+        bool isValidPath = false;
+
         do {
-            path = Console.ReadLine() ?? "";
-        } while (path.Trim().Trim('\"', '\'') == "");
-        return path.Trim().Trim('\"', '\'');
+            Console.Write(prompt);
+            path = Console.ReadLine()?.Trim().Trim('\"', '\'') ?? "";
+
+            if (string.IsNullOrWhiteSpace(path)) {
+                continue;
+            }
+
+            try {
+                // 使用 Uri 判断路径是否合法，并检查是否为文件
+                Uri uri = new Uri(path, UriKind.Absolute);
+                if (uri.IsFile) {
+                    isValidPath = true;
+                }
+            } catch {
+                isValidPath = false;
+            }
+        } while (!isValidPath);
+
+        return path;
     }
+
     internal static bool CheckStart(string prompt) {
         Console.Write(prompt);
         string input = Console.ReadLine() ?? "";

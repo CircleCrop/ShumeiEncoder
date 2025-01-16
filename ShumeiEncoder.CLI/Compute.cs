@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 
 public abstract class ComputeTask {
@@ -61,11 +62,10 @@ public class Compute {
 
 
 public class BuildCommand {
-    internal static void VideoEncodeArgs(string cachePath,
-                                       Preset preset,
-                                       out string codec,
-                                       out string cacheStreamFilePath,
-                                       out StringBuilder VideoEncodeArgs) {
+    internal static void VideoEncodeArgs(
+        string cachePath, Preset preset, out string codec, out string cacheStreamFilePath,
+        out StringBuilder VideoEncodeArgs) {
+
         //ffmpeg -i input.mp4 -f yuv4mpegpipe -an -blocksize 262144 - | x264 [options] --demuxer y4m -o output.264 -
         VideoEncodeArgs = new();
         codec = "";
@@ -89,11 +89,10 @@ public class BuildCommand {
         }
     }
 
-    internal static void AudioEncodeArgs(string cachePath,
-                                       Preset preset,
-                                       out string codec,
-                                       out string cacheStreamFilePath,
-                                       out StringBuilder AudioEncodeArgs) {
+    internal static void AudioEncodeArgs(
+        string cachePath, Preset preset, out string codec, out string cacheStreamFilePath,
+        out StringBuilder AudioEncodeArgs) {
+
         AudioEncodeArgs = new();
         codec = "";
         cacheStreamFilePath = "";

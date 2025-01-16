@@ -5,12 +5,12 @@ public class Program {
     internal static void Main(string[] args) {
         Log.Logger = new LoggerConfiguration().WriteTo.Console(
             theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
-            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u4}]] {Message:lj}{NewLine}{Exception}")
+            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u4}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
-        if (!args.Contains("disable-utf8")) {
+        if (!args.Contains("--disable-utf8")) {
             Console.OutputEncoding = Encoding.UTF8;
-            Log.Information("Current output encoding: UTF-8.");
+            Log.Information("Current output encoding: UTF-8");
         }
 
         CLIApi.WelcomeInfomation();
@@ -31,10 +31,28 @@ public class Program {
 
 
         // 选择文件和预设
-        string filePath = CLIApi.ChooseFile("Input File: ");
+
+
+        string filePath;
+        bool shouldReselectInputFile = false;
+        do {
+            filePath = CLIApi.ChooseFile("Input File: ");
+            if (!SupportFormat.Container.Contains(Path.GetExtension(filePath))) {
+                CLIApi.Tips("Unsupport format. Select again.");
+                shouldReselectInputFile = true;
+            }
+        } while (shouldReselectInputFile);
         Log.Information($"Select: {filePath}");
 
-        string presetPath = CLIApi.ChooseFile("YAML Preset File: ");
+        string presetPath;
+        bool shouldReselectInputPreset = false;
+        do {
+            presetPath = CLIApi.ChooseFile("YAML Preset File: ");
+            if (!SupportFormat.Preset.Contains(Path.GetExtension(presetPath))) {
+                CLIApi.Tips("Unsupport format. Select again.");
+                shouldReselectInputPreset = true;
+            }
+        } while (shouldReselectInputPreset);
         Log.Information($"Select: {presetPath}");
 
         // Select Output && Check
@@ -43,20 +61,18 @@ public class Program {
         do { 
             outputPath = CLIApi.ChooseFile("Output Path: ");
             Log.Information($"Select: {outputPath}");
-            if (File.Exists(outputPath)) {
-                shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n): ");
-            } else if (Directory.Exists(outputPath)) {
-                CLIApi.Tips("Output file is a dictionary. Select again.\n");
+            if (Directory.Exists(outputPath)) {
+                CLIApi.Tips("Output file is a dictionary. Select again.");
                 shouldReselectOutputFile = true;
             } else if (!SupportFormat.Container.Contains(Path.GetExtension(outputPath))) {
-                CLIApi.Tips("Unsupport format. Select again.\n");
+                CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectOutputFile = true;
-            } else {
-                shouldReselectOutputFile = true;
+            } else if (File.Exists(outputPath)) {
+                shouldReselectOutputFile = !CLIApi.CheckStart("Output file exists. Override? (y/n): ");
             }
-        } while (!shouldReselectOutputFile);
+        } while (shouldReselectOutputFile);
 
-        CLIApi.CheckStart("Start Processing? (y/n):");
+        do { } while (!CLIApi.CheckStart("Start Processing? (y/n):"));
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
@@ -71,21 +87,15 @@ public class Program {
         // 视频部分
         string videoCodec;
         StringBuilder VideoEncodeArgs;
-        BuildCommand.VideoEncodeArgs(cachePath,
-                                  preset,
-                                  out videoCodec,
-                                  out string? videoStreamCacheFilePath,
-                                  out VideoEncodeArgs);
+        BuildCommand.VideoEncodeArgs(cachePath, preset, out videoCodec, out string? videoStreamCacheFilePath,
+            out VideoEncodeArgs);
         outputStreams.Add(("video", videoStreamCacheFilePath));
 
         // 音频部分
         string audioCodec;
         StringBuilder AudioEncodeArgs;
-        BuildCommand.AudioEncodeArgs(cachePath,
-                                  preset,
-                                  out audioCodec,
-                                  out string? audioStreamCacheFilePath,
-                                  out AudioEncodeArgs);
+        BuildCommand.AudioEncodeArgs(cachePath, preset, out audioCodec, out string? audioStreamCacheFilePath,
+            out AudioEncodeArgs);
         outputStreams.Add(("audio", audioStreamCacheFilePath));
 
         string videoEncodeCommand = BuildCommand.CreateVideoEncodeCommand(filePath, videoCodec, VideoEncodeArgs);
