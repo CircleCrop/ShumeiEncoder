@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Serilog;
+using System.Diagnostics;
 using System.Text;
 using YamlDotNet.Serialization;
 
@@ -6,6 +7,11 @@ public class Program {
     internal static void Main(string[] args) {
 
         Console.WriteLine("Welcome to ShumeiEncoder\n");
+
+        Log.Logger = new LoggerConfiguration().WriteTo.Console(
+            theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
+            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u4}]] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
 
         /*Console.WriteLine("Please input a file...");
         string? newInputPath = Console.ReadLine();
@@ -20,28 +26,33 @@ public class Program {
          * 子菜单 - 执行确认
          * 子菜单 - 按任意键退出
          */
+
         // 选择文件和预设
         string filePath = CLIApi.ChooseFile("Input File: ");
-        Console.WriteLine($"Select: {filePath}\n");
+        Log.Information($"Select: {filePath}");
+        Console.WriteLine();
 
         string presetPath = CLIApi.ChooseFile("YAML Preset File: ");
-        Console.WriteLine($"Select: {presetPath}\n");
+        Console.WriteLine();
+        Console.WriteLine($"Select: {presetPath}");
 
         bool shouldReselectOutputFile = false;
         string outputPath;
         do {
             outputPath = CLIApi.ChooseFile("Output Path: ");
-            Console.WriteLine($"Select: {outputPath}\n");
+            Console.WriteLine();
+            Console.WriteLine($"Select: {outputPath}");
             if (File.Exists(outputPath)) {
-                shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n):");
-            } else if(Directory.Exists(outputPath)) {
-                shouldReselectOutputFile = CLIApi.CheckStart("Output file is a dictionary. Select again? (y/n):");
+                shouldReselectOutputFile = CLIApi.CheckStart("Output file exists. Override? (y/n): ");
+            } else if (Directory.Exists(outputPath)) {
+                shouldReselectOutputFile = CLIApi.CheckStart("Output file is a dictionary. Select again? (y/n): ");
             } else {
                 shouldReselectOutputFile = true;
             }
         } while (!shouldReselectOutputFile);
 
         CLIApi.CheckStart("Start Processing? (y/n):");
+        Console.WriteLine();
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
@@ -88,16 +99,16 @@ public class Program {
          * Console.WriteLine();
          */
 
-        Console.WriteLine(videoEncodeCommand + "\n\n");
+        Console.WriteLine(videoEncodeCommand);
         CreateComputeProcess(videoEncodeCommand, Path.GetFileNameWithoutExtension(videoCodec));
 
-        Console.WriteLine(audioEncodeCommand + "\n\n");
+        Console.WriteLine(audioEncodeCommand);
         CreateComputeProcess(audioEncodeCommand, Path.GetFileNameWithoutExtension(audioCodec));
 
-        Console.WriteLine(muxCommand + "\n\n");
+        Console.WriteLine(muxCommand);
         CreateComputeProcess(muxCommand, "FFmpeg");
 
-        Console.WriteLine("\n\nEncoding Success! File Path: " + outputPath);
+        Console.WriteLine("\nEncoding Success! File Path: " + outputPath);
 
         CLIApi.Exit();
     }
@@ -203,8 +214,10 @@ internal class BuildArgs {
 internal class CLIApi() {
     public static string ChooseFile(string prompt) {
         Console.Write(prompt);
-        string path = Console.ReadLine() ?? "";
-        Console.WriteLine();
+        string path;
+        do {
+            path = Console.ReadLine() ?? "";
+        } while (path.Trim().Trim('\"', '\'') == "");
         return path.Trim().Trim('\"', '\'');
     }
     public static bool CheckStart(string prompt) {
