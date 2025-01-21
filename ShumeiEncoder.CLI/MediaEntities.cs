@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 public class Preset {
     public required string Name { get; set; }
     public string? Description { get; set; }
-    public required string Version { get; set; }
+    public string? Version { get; set; }
     public Stream? Video { get; set; }
     public Stream? Audio { get; set; }
     public Stream? Container { get; set; }
@@ -87,10 +87,10 @@ public class DeserializerPreset {
 
 
 public class SupportFormat {
-    public static readonly List<string> Container = ["mp4", "mov", "mkv", "m4a", "flac", "wav"];
-    public static readonly List<string> VideoContainer = ["mp4", "mov", "mkv"];
-    public static readonly List<string> AudioContainer = ["m4a", "flac", "wav"];
-    public static readonly List<string> Preset = ["yml", "yaml", "txt"];
+    public static readonly List<string> Container = [".mp4", ".mov", ".mkv", ".m4a", ".flac", ".wav"];
+    public static readonly List<string> VideoContainer = [".mp4", ".mov", ".mkv"];
+    public static readonly List<string> AudioContainer = [".m4a", ".flac", ".wav"];
+    public static readonly List<string> Preset = [".yml", ".yaml", ".txt"];
     public static readonly List<string> VideoStream = [];
     public static readonly List<string> AudioStream = [];
     public SupportFormat() {
