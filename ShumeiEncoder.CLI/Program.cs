@@ -3,7 +3,11 @@ using System.Text;
 
 public class Program {
     internal static void Main(string[] args) {
-        Log.Logger = new LoggerConfiguration().WriteTo.Console(
+        Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#endif
+            .WriteTo.Console(
             theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
             outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u4}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
@@ -37,34 +41,50 @@ public class Program {
         bool shouldReselectInputFile = false;
         do {
             filePath = CLIApi.ChooseFile("Input File: ");
-            if (!SupportFormat.Container.Contains(Path.GetExtension(filePath))) {
+
+            Log.Debug(@"Path.GetExtension(filePath)" + Path.GetExtension(filePath).ToLower());
+            
+            if (!SupportFormat.Container.Contains(Path.GetExtension(filePath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectInputFile = true;
             }
         } while (shouldReselectInputFile);
         Log.Information($"Select: {filePath}");
 
+
+        // YAML 预设反序列化到 Preset 类
+        // 异常处理【To Do】
+        Preset? preset = null;
         string presetPath;
         bool shouldReselectInputPreset = false;
         do {
             presetPath = CLIApi.ChooseFile("YAML Preset File: ");
-            if (!SupportFormat.Preset.Contains(Path.GetExtension(presetPath))) {
+            if (!SupportFormat.Preset.Contains(Path.GetExtension(presetPath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
+                shouldReselectInputPreset = true;
+            }
+        
+            preset = DeserializerPreset(presetPath);
+            if (preset == null) {
                 shouldReselectInputPreset = true;
             }
         } while (shouldReselectInputPreset);
         Log.Information($"Select: {presetPath}");
 
+        if (preset == null) {
+            throw new ArgumentNullException();
+        }
+
         // Select Output && Check
         string outputPath;
         bool shouldReselectOutputFile = false;
-        do { 
+        do {
             outputPath = CLIApi.ChooseFile("Output Path: ");
             Log.Information($"Select: {outputPath}");
             if (Directory.Exists(outputPath)) {
                 CLIApi.Tips("Output file is a dictionary. Select again.");
                 shouldReselectOutputFile = true;
-            } else if (!SupportFormat.Container.Contains(Path.GetExtension(outputPath))) {
+            } else if (!SupportFormat.Container.Contains(Path.GetExtension(outputPath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectOutputFile = true;
             } else if (File.Exists(outputPath)) {
@@ -74,15 +94,11 @@ public class Program {
 
         do { } while (!CLIApi.CheckStart("Start Processing? (y/n):"));
 
-        // YAML 预设反序列化到 Preset 类
-        // 异常处理【To Do】
-        Preset preset = DeserializerPreset.New(presetPath);
-        Log.Information($"{preset.Name}: {preset.Description ?? ""}");
 
         // cache path 可被修改【To Do】
         string cachePath = Path.GetDirectoryName(outputPath)!;
 
-        List<(string Category, string FilePath)> outputStreams = new();
+        List<(string Category, string FilePath)> outputStreams = [];
 
         // 视频部分
         string videoCodec;
@@ -116,5 +132,18 @@ public class Program {
         Console.WriteLine("\nEncoding Success! File Path: " + outputPath);
 
         CLIApi.Exit();
+    }
+
+    private static Preset? DeserializerPreset(string presetPath) {
+        Preset? preset = null;
+        try {
+            preset = global::DeserializerPreset.New(presetPath);
+        } catch (Exception ex) {
+            Console.WriteLine(ex.ToString());
+        } finally {
+            Log.Information($"{preset?.Name ?? ""}: {preset?.Description ?? ""}");
+        }
+
+        return preset;
     }
 }
