@@ -3,6 +3,7 @@ using System.Text;
 
 public class Program {
     internal static void Main(string[] args) {
+        // Logger
         Log.Logger = new LoggerConfiguration()
 #if DEBUG
             .MinimumLevel.Debug()
@@ -12,11 +13,13 @@ public class Program {
             outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u4}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
+        // UTF-8
         if (!args.Contains("--disable-utf8")) {
             Console.OutputEncoding = Encoding.UTF8;
-            Log.Information("Current output encoding: UTF-8");
+            Log.Debug("Current output encoding: UTF-8");
         }
 
+        // 彩色 Logo
         CLIApi.WelcomeInfomation();
 
         /*Console.WriteLine("Please input a file...");
@@ -36,14 +39,13 @@ public class Program {
 
         // 选择文件和预设
 
-
         string filePath;
         bool shouldReselectInputFile = false;
         do {
             filePath = CLIApi.ChooseFile("Input File: ");
 
             Log.Debug(@"Path.GetExtension(filePath)" + Path.GetExtension(filePath).ToLower());
-            
+
             if (!SupportFormat.Container.Contains(Path.GetExtension(filePath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectInputFile = true;
@@ -63,7 +65,7 @@ public class Program {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectInputPreset = true;
             }
-        
+
             preset = DeserializerPreset(presetPath);
             if (preset == null) {
                 shouldReselectInputPreset = true;

@@ -1,5 +1,4 @@
 ﻿using Serilog;
-using System;
 
 internal class CLIApi() {
     internal static string ChooseFile(string prompt) {
@@ -7,12 +6,11 @@ internal class CLIApi() {
         bool isValidPath = false;
 
         do {
-            Console.Write(prompt);
-            path = Console.ReadLine()?.Trim().Trim('\"', '\'') ?? "";
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("> " + prompt);
+            Console.ResetColor();
 
-            if (string.IsNullOrWhiteSpace(path)) {
-                continue;
-            }
+            path = Console.ReadLine()?.Trim().Trim('\"', '\'') ?? "";
 
             try {
                 // 使用 Uri 判断路径是否合法，并检查是否为文件
@@ -36,9 +34,11 @@ internal class CLIApi() {
             _ => false,
         };
     }
+
     internal static void Tips(string prompt) {
         Console.WriteLine(prompt + "\n");
     }
+
     internal static void Exit() {
         Console.WriteLine("Press any key to exit...");
         Console.ReadLine();
@@ -47,8 +47,9 @@ internal class CLIApi() {
     internal static void WelcomeInfomation() {
         Log.Information("Github Url\t: https://github.com/CircleCrop/ShumeiEncoder");
         Log.Information("Author Url\t: https://aiccrop.com");
-        Log.Information($"Welcome to ShumeiEncoder!");
-        Console.WriteLine(
+        Log.Information("Welcome to ShumeiEncoder!");
+
+        const string logoLayer1 =
 @"        _            _       _    _                  _   _         _             _                           
        / /\         / /\    / /\ /\_\               /\_\/\_\ _    /\ \          /\ \                         
       / /  \       / / /   / / // / /         _    / / / / //\_\ /  \ \         \ \ \                        
@@ -70,7 +71,53 @@ internal class CLIApi() {
               / /\____\/   / / /    / / // / /          / / /   / / // / /   / / // /\____\/   / / /_____/   
              / / /______  / / /    / / // / /________  / / /___/ / / \ \ \__/ / // / /______  / / /\ \ \     
             / / /_______\/ / /    / / // / /_________\/ / /____\/ /   \ \___\/ // / /_______\/ / /  \ \ \    
-            \/__________/\/_/     \/_/ \/____________/\/_________/     \/_____/ \/__________/\/_/    \_\/
-");
+            \/__________/\/_/     \/_/ \/____________/\/_________/     \/_____/ \/__________/\/_/    \_\/    
+";
+        const string logoLayer2 =
+@"        _                         _                                _                            
+       / /\                      /\_\                             /\ \                          
+      / /  \                    / / /         _                  /  \ \                         
+     / / /\ \__                 \ \ \__      /\_\               / /\ \ \                        
+    / / /\ \___\                 \ \___\    / / /              / / /\ \_\                       
+    \ \ \ \/___/                  \__  /   / / /              / /_/_ \/_/                       
+     \ \ \                        / / /   / / /              / /____/\                          
+ _    \ \ \                      / / /   / / /              / /\____\/                          
+/_/\__/ / /                     / / /___/ / /              / / /______                          
+\ \/___/ /                     / / /____\/ /              / / /_______\                         
+ \_____\/                      \/_________/               \/__________/                         
+                                  _                            _                         _      
+                                 /\ \     _                   /\ \                      /\ \    
+                                /  \ \   /\_\                /  \ \                    /  \ \   
+                               / /\ \ \_/ / /               / /\ \ \                  / /\ \ \  
+                              / / /\ \___/ /               / / /\ \ \                / / /\ \_\ 
+                             / / /  \/____/               / / /  \ \_\              / /_/_ \/_/ 
+                            / / /    / / /               / / /   / / /             / /____/\    
+                           / / /    / / /               / / /   / / /             / /\____\/    
+                          / / /    / / /               / / /___/ / /             / / /______    
+                         / / /    / / /               / / /____\/ /             / / /_______\   
+                         \/_/     \/_/                \/_________/              \/__________/   
+";
+
+        (int x, int y) startPosition = Console.GetCursorPosition();
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(logoLayer1);
+
+        Console.ResetColor();
+        Console.SetCursorPosition(startPosition.x, startPosition.y);
+        Console.ForegroundColor = ConsoleColor.Green;
+
+        foreach (char c in logoLayer2) {
+            if (c == ' ') {
+                (int x, int y) = Console.GetCursorPosition();
+                Console.SetCursorPosition(x + 1, y);
+            } else {
+                Console.Write(c);
+            }
+            //Thread.Sleep(1);
+        }
+
+        Console.ResetColor();
+        Console.WriteLine();
     }
 }
