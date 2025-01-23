@@ -1,6 +1,5 @@
 ﻿using Serilog;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 
 public abstract class ComputeTask {
@@ -25,27 +24,26 @@ public abstract class ComputeTask {
 
 public class Compute {
     internal static void CreateProcess(string command, string codec = "Compute") {
-        ProcessStartInfo startInfo = new() {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"chcp 65001 >nul && {command} && timeout /t 0 >nul\"",
-            RedirectStandardInput = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
         // 启动编码
         using (Process process = new()) {
-            process.StartInfo = startInfo;
+            process.StartInfo = new() {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && {command} && timeout /t 0 >nul\"",
+                RedirectStandardInput = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            ;
 
-            process.OutputDataReceived += (sender, args) => {
+            process.OutputDataReceived += (_, args) => {
                 if (!string.IsNullOrEmpty(args.Data)) {
                     Log.Information($"[{codec}] {args.Data}");
                 }
             };
 
-            process.ErrorDataReceived += (sender, args) => {
+            process.ErrorDataReceived += (_, args) => {
                 if (!string.IsNullOrEmpty(args.Data)) {
                     Log.Information($"[{codec}] {args.Data}");
                 }

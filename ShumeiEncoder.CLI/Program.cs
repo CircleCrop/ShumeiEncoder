@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Diagnostics;
 using System.Text;
 
 public class Program {
@@ -53,6 +54,34 @@ public class Program {
         } while (shouldReselectInputFile);
         Log.Information($"Select: {filePath}");
 
+        // FFprobe 输出 INFO
+        char showStreams = 'v';
+        StringBuilder inputJsonInfo = new();
+        using (Process process = new()) {
+            process.StartInfo = new() {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json -show_streams -select_streams {showStreams} \"{filePath}\" && timeout /t 0 >nul\"",
+                RedirectStandardInput = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            ;
+
+            Log.Debug($"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json -show_streams -select_streams {showStreams} \"{filePath}\" && timeout /t 0 >nul\"");
+
+            process.OutputDataReceived += (_, args) => {
+                if (args.Data != null) {
+                    inputJsonInfo.Append(args.Data);
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+
+        }
+        Log.Debug(inputJsonInfo.ToString().Replace("\r", "").Replace("\n", "").Replace("  ", ""));
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
