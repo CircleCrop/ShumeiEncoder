@@ -1,5 +1,4 @@
-﻿using Serilog;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 
 public abstract class ComputeTask {
@@ -38,14 +37,16 @@ public class Compute {
             ;
 
             process.OutputDataReceived += (_, args) => {
+                /*
                 if (!string.IsNullOrEmpty(args.Data)) {
-                    Log.Information($"[{codec}] {args.Data}");
+                    Console.Write($"\r[{DateTime.Now.ToLocalTime()}] [{codec}] {args.Data}");
                 }
+                */
             };
 
             process.ErrorDataReceived += (_, args) => {
                 if (!string.IsNullOrEmpty(args.Data)) {
-                    Log.Information($"[{codec}] {args.Data}");
+                    Console.Write($"\r[{DateTime.Now.ToLocalTime()}] [{codec}] {args.Data}");
                 }
             };
 
@@ -97,9 +98,42 @@ public class BuildCommand {
         if (preset.Audio?.Fmt != null && preset.Audio.Fmt == "aac") {
             codec = CodecPath.Qaac64;
             cacheStreamFilePath = Path.Combine(cachePath, "output_cache.m4a");
+
             // 读取音频位深，避免 16 位量化误差【To Do】
+
+            if (preset.Audio.Args != null) {
+                string tmp_arg1 = "";
+                string tmp_arg2 = "";
+                // 收集需要移除的键
+                var keysToRemove = new List<string>();
+
+                foreach (var arg in preset.Audio.Args) {
+                    switch (arg.Key) {
+                        case "mode":
+                            tmp_arg1 = $"--{arg.Value}";
+                            keysToRemove.Add(arg.Key);
+                            break;
+
+                        case "quality":
+                            tmp_arg2 = $" {arg.Value}";
+                            keysToRemove.Add(arg.Key);
+                            break;
+                    }
+                }
+
+                // 移除收集的键
+                foreach (var key in keysToRemove) {
+                    preset.Audio.Args.Remove(key);
+                }
+
+                // 拼接最终参数
+                AudioEncodeArgs.Append(tmp_arg1 + tmp_arg2);
+            }
+
+
             ArgsToCLIString(preset.Audio, AudioEncodeArgs);
             AudioEncodeArgs.Append($" -o \"{cacheStreamFilePath}\" -");
+
             // 支持其他 AAC 参数【已完成】
 
         }
@@ -115,8 +149,8 @@ public class BuildCommand {
     private static void ArgsToCLIString(Preset.Stream p_stream, StringBuilder VideoEncodeCommand) {
         if (p_stream != null) {
             if (p_stream.Args != null) {
-                foreach (var videoArgs in p_stream!.Args!) {
-                    VideoEncodeCommand.Append($" --{videoArgs.Key}={videoArgs.Value}");
+                foreach (var arg in p_stream!.Args!) {
+                    VideoEncodeCommand.Append($" --{arg.Key}={arg.Value}");
                 }
             }
             if (p_stream.Flags != null) {
@@ -128,15 +162,15 @@ public class BuildCommand {
     }
 
     public static string CreateAudioEncodeCommand(string filePath, string audioCodec, StringBuilder AudioEncodeArgs) {
-        return $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{filePath}\" -f wav - | \"{audioCodec}\" {AudioEncodeArgs.ToString()}";
+        return $"\"{CodecPath.FFmpeg}\" -hide_banner -loglevel error -i \"{filePath}\" -vn -f wav - | \"{audioCodec}\" {AudioEncodeArgs.ToString()}";
     }
 
     public static string CreateMuxCommand(string outputPath, string videoStreamCacheFilePath, string audioStreamCacheFilePath) {
-        return $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{videoStreamCacheFilePath}\" -i \"{audioStreamCacheFilePath}\" -c copy \"{outputPath}\"";
+        return $"\"{CodecPath.FFmpeg}\" -hide_banner -loglevel error -i \"{videoStreamCacheFilePath}\" -i \"{audioStreamCacheFilePath}\" -c copy \"{outputPath}\" -y";
     }
 
     public static string CreateVideoEncodeCommand(string filePath, string videoCodec, StringBuilder VideoEncodeArgs) {
-        return $"\"{CodecPath.FFmpeg}\" -hide_banner -i \"{filePath}\" -f yuv4mpegpipe -pix_fmt yuv420p -an -blocksize 262144 - | \"{videoCodec}\" {VideoEncodeArgs.ToString()}";
+        return $"\"{CodecPath.FFmpeg}\" -hide_banner -loglevel error -i \"{filePath}\" -f yuv4mpegpipe -pix_fmt yuv420p -an -blocksize 262144 - | \"{videoCodec}\" {VideoEncodeArgs.ToString()}";
         // Blocksize = 256KB
     }
 }

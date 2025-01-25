@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using YamlDotNet.Serialization;
+﻿using YamlDotNet.Serialization;
 
 public class Preset {
     public required string Name { get; set; }
@@ -25,8 +24,12 @@ public class FileInfo {
     public required string FileName { get; set; }
     public required string FilePath { get; set; }
     public required string FileExt { get; set; }
-    public required DateTime FileDate { get; set; }
-    public required TimeOnly Duration { get; set; }
+    public DateTime? FileDate { get; set; }
+    public List<Dictionary<string, object>>? Streams { get; set; }
+
+    //public List<Sub>? SubStream { get; set; }
+
+    /*
     // Video
     public class Video {
         public string? Format { get; set; }
@@ -36,7 +39,7 @@ public class FileInfo {
         public int? Depth { get; set; } // 8/10
         public int? ChromaSubsampling { get; set; } // 420/422/444
         public string? ColorPrimaries { get; set; } // BT.709
-        public string? ColorRange { get; set; } // Limited
+        public string? ColorRange { get; set; } // tv
     }
     // Audio
     public class Audio {
@@ -44,10 +47,12 @@ public class FileInfo {
         public int? AudioBitrate { get; set; } // kbps
         public int? AudioChannel { get; set; } // 默认 2，立体声
         public int? AudioOffset { get; set; } // ms}
-    }
-    public FileInfo(string json) {
-        JsonDocument document = JsonDocument.Parse(json);
-    }
+    }*/
+    
+    /* public JsonDocument document FileInfo(string json) {
+     *   JsonDocument document = JsonDocument.Parse(json);
+     * }
+     */
 }
 
 

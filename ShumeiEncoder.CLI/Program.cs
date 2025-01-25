@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Newtonsoft.Json;
+using Serilog;
 using System.Diagnostics;
 using System.Text;
 
@@ -50,38 +51,61 @@ public class Program {
             if (!SupportFormat.Container.Contains(Path.GetExtension(filePath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectInputFile = true;
-            }
+            } else { shouldReselectInputFile = false; }
         } while (shouldReselectInputFile);
         Log.Information($"Select: {filePath}");
 
         // FFprobe 输出 INFO
-        char showStreams = 'v';
+        //char showStreams = 'v';
         StringBuilder inputJsonInfo = new();
-        using (Process process = new()) {
-            process.StartInfo = new() {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json -show_streams -select_streams {showStreams} \"{filePath}\" && timeout /t 0 >nul\"",
-                RedirectStandardInput = false,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            ;
+        string inputStreamsJsonInfo;
+        string inputContainerJsonInfo;
+        List<string> jsonInfoArgs = [
+            "-show_format",
+            "-show_streams",
+            "-show_programs",
+            "-show_chapter",
+            "-show_private_data"
+        ];
+        inputStreamsJsonInfo = FFprobeJsonInfo(filePath: filePath, jsonInfoArgs[1]);
 
-            Log.Debug($"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json -show_streams -select_streams {showStreams} \"{filePath}\" && timeout /t 0 >nul\"");
+        int start = inputStreamsJsonInfo.IndexOf('[');
+        int end = inputStreamsJsonInfo.LastIndexOf(']');
+        inputStreamsJsonInfo = inputStreamsJsonInfo.Remove(end + 1);
+        inputStreamsJsonInfo = inputStreamsJsonInfo.Remove(0, start);
 
-            process.OutputDataReceived += (_, args) => {
-                if (args.Data != null) {
-                    inputJsonInfo.Append(args.Data);
-                }
-            };
+        Console.WriteLine(inputStreamsJsonInfo);
 
-            process.Start();
-            process.BeginOutputReadLine();
-            process.WaitForExit();
+        //inputStreamsJsonInfo.
+        //inputContainerJsonInfo = FFprobeJsonInfo(filePath, jsonInfoArgs[1]);
 
+        foreach (string arg in jsonInfoArgs) {
+            try {
+                Log.Debug(System.Text.Json.JsonSerializer.Serialize(System.Text.Json.JsonSerializer.Deserialize<dynamic>(FFprobeJsonInfo(filePath, arg))));
+            } catch { }
         }
-        Log.Debug(inputJsonInfo.ToString().Replace("\r", "").Replace("\n", "").Replace("  ", ""));
+
+        FileInfo inputFileInfo = new() {
+            FileName = Path.GetFileName(filePath),
+            FileExt = Path.GetExtension(filePath),
+            FilePath = filePath
+        };
+
+        inputFileInfo.Streams = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(inputStreamsJsonInfo);
+        if (inputFileInfo.Streams == null) {
+            throw new ArgumentNullException();
+        }
+        foreach (var stream in inputFileInfo.Streams) {
+            foreach (var tag in stream!) { // 键值
+                if (tag.Value is Dictionary<string, string> nestedDict) {
+                    foreach (var kvp in nestedDict) {
+                        Console.WriteLine($"{kvp.Key.PadRight(24)} : {kvp.Value}");
+                    }
+
+                }
+                Console.WriteLine($"{tag.Key.PadRight(24)} : {tag.Value}");
+            }
+        }
 
         // YAML 预设反序列化到 Preset 类
         // 异常处理【To Do】
@@ -93,12 +117,10 @@ public class Program {
             if (!SupportFormat.Preset.Contains(Path.GetExtension(presetPath).ToLower())) {
                 CLIApi.Tips("Unsupport format. Select again.");
                 shouldReselectInputPreset = true;
-            }
+            } else { shouldReselectInputFile = false; }
 
             preset = DeserializerPreset(presetPath);
-            if (preset == null) {
-                shouldReselectInputPreset = true;
-            }
+
         } while (shouldReselectInputPreset);
         Log.Information($"Select: {presetPath}");
 
@@ -163,6 +185,35 @@ public class Program {
         Console.WriteLine("\nEncoding Success! File Path: " + outputPath);
 
         CLIApi.Exit();
+    }
+
+    private static string FFprobeJsonInfo(string filePath, string showInfo) {
+        using (Process process = new()) {
+            StringBuilder output = new();
+            process.StartInfo = new() {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json {showInfo} \"{filePath}\" && timeout /t 0 >nul\"",
+                RedirectStandardInput = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            ;
+
+            process.OutputDataReceived += (_, args) => {
+                if (args.Data != null) {
+                    output.Append(args.Data);
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+
+            //Log.Debug(output.ToString().Replace("\r", "").Replace("\n", "").Replace("  ", ""));
+
+            return output.ToString();
+        }
     }
 
     private static Preset? DeserializerPreset(string presetPath) {
