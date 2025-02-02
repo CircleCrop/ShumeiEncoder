@@ -1,56 +1,57 @@
 ﻿using Serilog;
 
-internal class CLIApi() {
-    internal static string ChooseFile(string prompt) {
-        string path;
-        bool isValidPath = false;
+namespace ShumeiEncoder.CLI {
+    internal class CLIApi() {
+        internal static string ChooseFile(string prompt) {
+            string path;
+            bool isValidPath = false;
 
-        do {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("> " + prompt);
-            Console.ResetColor();
+            do {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("> " + prompt);
+                Console.ResetColor();
 
-            path = Console.ReadLine()?.Trim().Trim('\"', '\'') ?? "";
+                path = Console.ReadLine()?.Trim().Trim('\"', '\'') ?? "";
 
-            try {
-                // 使用 Uri 判断路径是否合法，并检查是否为文件
-                Uri uri = new Uri(path, UriKind.Absolute);
-                if (uri.IsFile) {
-                    isValidPath = true;
+                try {
+                    // 使用 Uri 判断路径是否合法，并检查是否为文件
+                    Uri uri = new Uri(path, UriKind.Absolute);
+                    if (uri.IsFile) {
+                        isValidPath = true;
+                    }
+                } catch {
+                    isValidPath = false;
                 }
-            } catch {
-                isValidPath = false;
-            }
-        } while (!isValidPath);
+            } while (!isValidPath);
 
-        return path;
-    }
+            return path;
+        }
 
-    internal static bool CheckStart(string prompt) {
-        Console.Write(prompt);
-        string input = Console.ReadLine() ?? "";
-        return input.Trim() switch {
-            "y" => true,
-            _ => false,
-        };
-    }
+        internal static bool CheckStart(string prompt) {
+            Console.Write(prompt);
+            string input = Console.ReadLine() ?? "";
+            return input.Trim() switch {
+                "y" => true,
+                _ => false,
+            };
+        }
 
-    internal static void Tips(string prompt) {
-        Console.WriteLine(prompt + "\n");
-    }
+        internal static void Tips(string prompt) {
+            Console.WriteLine(prompt + "\n");
+        }
 
-    internal static void Exit() {
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadLine();
-    }
+        internal static void Exit() {
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadLine();
+        }
 
-    internal static void WelcomeInfomation() {
-        Log.Information("Github Url\t: https://github.com/CircleCrop/ShumeiEncoder");
-        Log.Information("Author Url\t: https://aiccrop.com");
-        Log.Information("Welcome to ShumeiEncoder!");
+        internal static void WelcomeInfomation() {
+            Log.Information("Github Url\t: https://github.com/CircleCrop/ShumeiEncoder");
+            Log.Information("Author Url\t: https://aiccrop.com");
+            Log.Information("Welcome to ShumeiEncoder!");
 
-        const string logoLayer1 =
-@"        _            _       _    _                  _   _         _             _                           
+            const string logoLayer1 =
+    @"        _            _       _    _                  _   _         _             _                           
        / /\         / /\    / /\ /\_\               /\_\/\_\ _    /\ \          /\ \                         
       / /  \       / / /   / / // / /         _    / / / / //\_\ /  \ \         \ \ \                        
      / / /\ \__   / /_/   / / / \ \ \__      /\_\ /\ \/ \ \/ / // /\ \ \        /\ \_\                       
@@ -73,8 +74,8 @@ internal class CLIApi() {
             / / /_______\/ / /    / / // / /_________\/ / /____\/ /   \ \___\/ // / /_______\/ / /  \ \ \    
             \/__________/\/_/     \/_/ \/____________/\/_________/     \/_____/ \/__________/\/_/    \_\/    
 ";
-        const string logoLayer2 =
-@"        _                         _                                _                            
+            const string logoLayer2 =
+    @"        _                         _                                _                            
        / /\                      /\_\                             /\ \                          
       / /  \                    / / /         _                  /  \ \                         
      / / /\ \__                 \ \ \__      /\_\               / /\ \ \                        
@@ -98,26 +99,27 @@ internal class CLIApi() {
                          \/_/     \/_/                \/_________/              \/__________/   
 ";
 
-        (int x, int y) startPosition = Console.GetCursorPosition();
+            (int x, int y) startPosition = Console.GetCursorPosition();
 
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(logoLayer1);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(logoLayer1);
 
-        Console.ResetColor();
-        Console.SetCursorPosition(startPosition.x, startPosition.y);
-        Console.ForegroundColor = ConsoleColor.Green;
+            Console.ResetColor();
+            Console.SetCursorPosition(startPosition.x, startPosition.y);
+            Console.ForegroundColor = ConsoleColor.Green;
 
-        foreach (char c in logoLayer2) {
-            if (c == ' ') {
-                (int x, int y) = Console.GetCursorPosition();
-                Console.SetCursorPosition(x + 1, y);
-            } else {
-                Console.Write(c);
+            foreach (char c in logoLayer2) {
+                if (c == ' ') {
+                    (int x, int y) = Console.GetCursorPosition();
+                    Console.SetCursorPosition(x + 1, y);
+                } else {
+                    Console.Write(c);
+                }
+                //Thread.Sleep(1);
             }
-            //Thread.Sleep(1);
-        }
 
-        Console.ResetColor();
-        Console.WriteLine();
+            Console.ResetColor();
+            Console.WriteLine();
+        }
     }
 }
