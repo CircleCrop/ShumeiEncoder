@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <Compile Remove="Properties\PublishProfiles\**" />
-    <EmbeddedResource Remove="Properties\PublishProfiles\**" />
     <None Remove="Properties\PublishProfiles\**" />
   </ItemGroup>
 

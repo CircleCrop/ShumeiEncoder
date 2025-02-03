@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Text;
 
 namespace ShumeiEncoder.CLI {
     internal class CLIApi() {
@@ -29,15 +30,19 @@ namespace ShumeiEncoder.CLI {
 
         internal void ProcessBar(string prcesssName) {
             // Running x264.exe | 13.00% | 88.42 f/s, 6652.25 kb/s | ETA 0:05:00
-            string prefix = $"Running {prcesssName}:";
-            static void Update(string output) {
-                int width = Console.WindowWidth;
+            // Origin Format: 856 frames: 168.44 fps, 5731.65 kb/s
+            StringBuilder rendered = new();
 
+            void Update(string output) {
+                int width = Console.WindowWidth;
+                rendered.Append($"Running {prcesssName}: ");
             }
         }
 
         internal static bool CheckStart(string prompt) {
-            Console.Write(prompt);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("> " + prompt);
+            Console.ResetColor();
             string input = Console.ReadLine() ?? "";
             return input.Trim() switch {
                 "y" => true,
