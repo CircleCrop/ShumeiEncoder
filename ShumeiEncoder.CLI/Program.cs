@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Serilog;
-using System.Diagnostics;
 using System.Text;
-using YamlDotNet;
 
 namespace ShumeiEncoder.CLI {
     public class Program {
@@ -59,9 +57,6 @@ namespace ShumeiEncoder.CLI {
 
             // FFprobe 输出 INFO
             //char showStreams = 'v';
-            StringBuilder inputJsonInfo = new();
-            string inputStreamsJsonInfo;
-            string inputContainerJsonInfo;
             List<string> jsonInfoArgs = [
                 "-show_format",
                 "-show_streams",
@@ -69,31 +64,35 @@ namespace ShumeiEncoder.CLI {
                 "-show_chapter",
                 "-show_private_data"
             ];
-            inputStreamsJsonInfo = FFprobeJsonInfo(filePath: filePath, jsonInfoArgs[1]);
 
-            int start = inputStreamsJsonInfo.IndexOf('[');
-            int end = inputStreamsJsonInfo.LastIndexOf(']');
-            inputStreamsJsonInfo = inputStreamsJsonInfo.Remove(end + 1);
-            inputStreamsJsonInfo = inputStreamsJsonInfo.Remove(0, start);
+            //StringBuilder inputJsonInfo = new();
+            string inputStreamsJsonInfo;
+            //string inputContainerJsonInfo;
 
-            Console.WriteLine(inputStreamsJsonInfo);
+            inputStreamsJsonInfo = Compute.FFprobeJsonInfo(filePath: filePath, jsonInfoArgs[1]);
+            inputStreamsJsonInfo = inputStreamsJsonInfo.Remove(inputStreamsJsonInfo.LastIndexOf(']') + 1).Remove(0, inputStreamsJsonInfo.ToString().IndexOf('['));
+
+            //inputContainerJsonInfo = Compute.FFprobeJsonInfo(filePath: filePath, jsonInfoArgs[0]);
+            //inputContainerJsonInfo = inputStreamsJsonInfo.Remove(inputContainerJsonInfo.LastIndexOf('}') + 1).Remove(0, inputContainerJsonInfo.ToString().IndexOf("format\": {"));
+
+            Log.Debug(inputStreamsJsonInfo.Replace("\n", "").Replace("  ", "")); // 仅供测试输出
+            //Log.Debug(inputContainerJsonInfo.Remove(' '));
 
             //inputStreamsJsonInfo.
             //inputContainerJsonInfo = FFprobeJsonInfo(filePath, jsonInfoArgs[1]);
-
+            /*
             foreach (string arg in jsonInfoArgs) {
                 try {
-                    Log.Debug(System.Text.Json.JsonSerializer.Serialize(System.Text.Json.JsonSerializer.Deserialize<dynamic>(FFprobeJsonInfo(filePath, arg))));
-                } catch { }
-            }
+                    //Log.Debug(System.Text.Json.JsonSerializer.Serialize(System.Text.Json.JsonSerializer.Deserialize<dynamic>(Compute.FFprobeJsonInfo(filePath, arg))));
+                } catch (Exception e) { Console.WriteLine(e); }
+            }*/
 
             FileInfo inputFileInfo = new() {
                 FileName = Path.GetFileName(filePath),
                 FileExt = Path.GetExtension(filePath),
-                FilePath = filePath
+                FilePath = filePath,
+                Streams = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(inputStreamsJsonInfo)
             };
-
-            inputFileInfo.Streams = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(inputStreamsJsonInfo);
             if (inputFileInfo.Streams == null) {
                 throw new ArgumentNullException();
             }
@@ -101,16 +100,15 @@ namespace ShumeiEncoder.CLI {
                 foreach (var tag in stream!) { // 键值
                     if (tag.Value is Dictionary<string, string> nestedDict) {
                         foreach (var kvp in nestedDict) {
-                            Console.WriteLine($"{kvp.Key.PadRight(24)} : {kvp.Value}");
+                            Log.Debug($"{kvp.Key,-24} : {kvp.Value}");
                         }
 
                     }
-                    Console.WriteLine($"{tag.Key.PadRight(24)} : {tag.Value}");
+                    Log.Debug($"{tag.Key,-24} : {tag.Value}");
                 }
             }
 
             // YAML 预设反序列化到 Preset 类
-            // 异常处理【To Do】
             Preset? inputPreset = null;
             string presetPath;
             bool shouldReselectInputPreset = false;
@@ -121,6 +119,7 @@ namespace ShumeiEncoder.CLI {
                     shouldReselectInputPreset = true;
                 } else { shouldReselectInputFile = false; }
 
+                // 异常处理【已完成】
                 try {
                     inputPreset = Preset.New(presetPath);
                 } catch (Exception ex) {
@@ -164,14 +163,14 @@ namespace ShumeiEncoder.CLI {
             string videoCodec;
             StringBuilder VideoEncodeArgs;
             BuildCommand.VideoEncodeArgs(cachePath, inputPreset, out videoCodec, out string? videoStreamCacheFilePath,
-                out VideoEncodeArgs);
+                    out VideoEncodeArgs);
             outputStreams.Add(("video", videoStreamCacheFilePath));
 
             // 音频部分
             string audioCodec;
             StringBuilder AudioEncodeArgs;
             BuildCommand.AudioEncodeArgs(cachePath, inputPreset, out audioCodec, out string? audioStreamCacheFilePath,
-                out AudioEncodeArgs);
+                    out AudioEncodeArgs);
             outputStreams.Add(("audio", audioStreamCacheFilePath));
 
             string videoEncodeCommand = BuildCommand.CreateVideoEncodeCommand(filePath, videoCodec, VideoEncodeArgs);
@@ -192,35 +191,6 @@ namespace ShumeiEncoder.CLI {
             Console.WriteLine("\nEncoding Success! File Path: " + outputPath);
 
             CLIApi.Exit();
-        }
-
-        private static string FFprobeJsonInfo(string filePath, string showInfo) {
-            using (Process process = new()) {
-                StringBuilder output = new();
-                process.StartInfo = new() {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json {showInfo} \"{filePath}\" && timeout /t 0 >nul\"",
-                    RedirectStandardInput = false,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                ;
-
-                process.OutputDataReceived += (_, args) => {
-                    if (args.Data != null) {
-                        output.Append(args.Data);
-                    }
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.WaitForExit();
-
-                //Log.Debug(output.ToString().Replace("\r", "").Replace("\n", "").Replace("  ", ""));
-
-                return output.ToString();
-            }
         }
     }
 }

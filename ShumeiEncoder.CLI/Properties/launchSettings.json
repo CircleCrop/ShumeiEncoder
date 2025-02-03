@@ -3,7 +3,7 @@
     "ShumeiEncoder.CLI": {
       "commandName": "Project",
       "environmentVariables": {
-        "RUNNING_PATH_PREFIX": "D:\\Coding\\CSharp\\ShumeiEncoder\\static"
+        "RUNNING_PATH_PREFIX": "D:\\Coding\\Digital-Media-Association-of-SHS\\ShumeiEncoder\\static"
       }
     }
   }

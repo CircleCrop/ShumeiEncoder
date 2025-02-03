@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Serilog;
+using System.Diagnostics;
 using System.Text;
 
 namespace ShumeiEncoder.CLI {
@@ -23,6 +24,39 @@ namespace ShumeiEncoder.CLI {
 
 
     public class Compute {
+        public static string FFprobeJsonInfo(string filePath, string showInfo) {
+            using Process process = new();
+            StringBuilder output = new();
+            process.StartInfo = new() {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && ffprobe -hide_banner -print_format json {showInfo} \"{filePath}\" && timeout /t 0 >nul\"",
+                RedirectStandardInput = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            ;
+
+            process.OutputDataReceived += (_, args) => {
+                if (args.Data != null) {
+                    output.Append(args.Data);
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+
+            // Log.Debug(output.ToString().Replace("\r", "").Replace("\n", "").Replace("  ", ""));
+
+            string outputJson = output.ToString();
+
+            Log.Debug($"ffprobe -hide_banner -print_format json {showInfo} \"{filePath}\"");
+
+            return outputJson;
+        }
+
+
         internal static void CreateProcess(string command, string codec = "Compute") {
             // 启动编码
             using (Process process = new()) {
@@ -147,6 +181,7 @@ namespace ShumeiEncoder.CLI {
 
             }
         }
+
         private static void ArgsToCLIString(Preset.Stream p_stream, StringBuilder VideoEncodeCommand) {
             if (p_stream != null) {
                 if (p_stream.Args != null) {

@@ -27,6 +27,15 @@ namespace ShumeiEncoder.CLI {
             return path;
         }
 
+        internal void ProcessBar(string prcesssName) {
+            // Running x264.exe | 13.00% | 88.42 f/s, 6652.25 kb/s | ETA 0:05:00
+            string prefix = $"Running {prcesssName}:";
+            static void Update(string output) {
+                int width = Console.WindowWidth;
+
+            }
+        }
+
         internal static bool CheckStart(string prompt) {
             Console.Write(prompt);
             string input = Console.ReadLine() ?? "";
